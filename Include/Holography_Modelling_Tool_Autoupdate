@@ -121,15 +121,16 @@ if (first()){
         }
         
         function void fileData(){
-            if (fileStatus() == 1){
-                fileCompare(fileRead(),FileData[CurrentLoad,string])        
+            CurrentLoad++
+            if (fileStatus() == 1){                
+                fileCompare(fileRead(),FileData[CurrentLoad,string])      
             }
             else{
-                print("dIDNT FIND: "+LoadFile)
+                print("Didn't find: "+LoadFile)
                 Missing:pushString(LoadFile)
                 OutOfDate:pushString(LoadFile)       
             }
-            CurrentLoad++
+                        
             if (CurrentLoad<(FileNames:count()-1)){
                 ReadQueue:removeString(1)
                 loadFile(ReadQueue[1,string])        
@@ -164,16 +165,18 @@ if (chatClk(owner())){
         if (UpdateAllowed){
             local OutOfDateCopy = OutOfDate:clone()
             for(I=1,OutOfDateCopy:count()){
-                if (OutOfDateCopy[I,string]==Missing[I,string]){
-                    OutOfDateCopy:removeString(I)        
-                }        
-            }
-            for(I=1,Missing:count()){
-                colorPrint("AutoUpdater","Missing:",Missing[I,string],"")             
+                for(J=1,Missing:count()){
+                    if (OutOfDateCopy[I,string] == Missing[J,string]){
+                        OutOfDateCopy:removeString(I)        
+                    }   
+                }    
             }
             for(I=1,OutOfDateCopy:count()){
                 colorPrint("AutoUpdater","Found, Out of date:",OutOfDateCopy[I,string],"")    
             }  
+            for(I=1,Missing:count()){
+                colorPrint("AutoUpdater","Missing:",Missing[I,string],"")             
+            }            
         }     
     }
     elseif (lastSaid():lower()=="-update"){
