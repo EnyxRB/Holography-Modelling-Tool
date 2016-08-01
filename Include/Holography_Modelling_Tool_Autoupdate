@@ -26,7 +26,8 @@ if (first()){
         function void fileCompare(Current:string, New:string){
             if (Current != New){
                 OutOfDate:pushString(LoadFile)
-                print("Out of date")
+                print("Out of date "+LoadFile)
+                #print("Comparing",LoadFile," | ",FileData[CurrentLoad,string])
             }        
         }
         
@@ -123,7 +124,7 @@ if (first()){
         function void fileData(){
             CurrentLoad++
             if (fileStatus() == 1){                
-                fileCompare(fileRead(),FileData[CurrentLoad,string])      
+                fileCompare(fileRead(),FileData[CurrentLoad,string])                      
             }
             else{
                 print("Didn't find: "+LoadFile)
@@ -140,7 +141,7 @@ if (first()){
                     InstallAllowed = 1
                     colorPrint("Autoupdate","None of the required files are in the right place for Autoupdate to work! You can type","-install","to make a fresh new version in the e2shared folder.")                       
                 }
-                elseif ((OutOfDate:count()==(FileData:count()-1))){
+                elseif (OutOfDate:count()>0){
                     printColor(vec(0,255,0),"[HMT Autoupdate]",vec(0,175,0),"["+Version+"] ",vec(255)," Your current version of HMT is",vec(225,0,0)," OUT OF DATE.",vec(255)," Please type ",vec(0,161,255),"-update ",vec(255),"to update! ",vec(255),"Typing ",vec(0,161,255),"-info",vec(255)," will tell you what files need to update.")                                               
                     UpdateAllowed = 1
                 }
