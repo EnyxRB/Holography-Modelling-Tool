@@ -191,7 +191,7 @@ if (first()){
         }
         elseif (lastSaid():lower()=="-update"){
             if (UpdateAllowed){
-                writeData(OutOfDate[1,string],FileData[1,string])        
+                writeData(OutOfDate[1,string],FileData[2,string])        
             }    
         }
     }
