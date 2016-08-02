@@ -106,7 +106,7 @@ if (first()){
                 colorPrint("Autoupdate","Updated:",Path,"")
                 OutOfDate:removeString(1)
                 FileData:removeString(2)
-                if (Updated<OutOfDate:count()){ 
+                if (Updated<=OutOfDate:count()){ 
                     writeData(OutOfDate[1,string],FileData[2,string])                    
                 }
                 else{
