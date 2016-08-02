@@ -1,5 +1,5 @@
 @name Holography Modelling Tool Autoupdate
-@persist [HeaderFile CheckFile LoadFile MOTD]:string [UpdateTable FileNames FileData ReadQueue OutOfDate Missing]:table CurrentLoad
+@persist [HeaderFile CheckFile LoadFile MOTD]:string [UpdateTable FileNames FileData FileDataStrings ReadQueue OutOfDate Missing]:table CurrentLoad
 @persist UpdateAllowed [PathToWrite DataToWrite]:string Updated
 
 if (first()){
@@ -15,14 +15,14 @@ if (first()){
             printColor(vec(0,255,0),"[HMT "+Sector+"]",vec(0,175,0),"["+Version+"] ",Array)
         }
         
-        function string reformatFilename(Name:string){
-            local EndPath = Name:explode("EnyxRB")[2,string]
+        function string reformatFilename(Path:string){
+            local EndPath = Path:explode("EnyxRB")[2,string]
             local ReplaceDash = EndPath:replace("-","_")
             local MasterMove = (">e2shared" + ReplaceDash + ".txt"):explode("/master")
             local FinalString = MasterMove[1,string]+MasterMove[2,string]
             return FinalString
         }
-        
+                
         function void fileCompare(Current:string, New:string){
             if (Current != New){
                 OutOfDate:pushString(LoadFile)
@@ -84,7 +84,9 @@ if (first()){
         }
         
         function void standardData(){
-            FileData:pushString(httpData())
+            local HTPPdata = httpData()
+            FileData:pushString(HTPPdata)
+            FileDataStrings[reformatFilename(UpdateTable[2,table][1,string]),string] = HTPPdata
             ReadQueue:pushString(reformatFilename(UpdateTable[2,table][1,string]))
             UpdateTable[2,table]:removeString(1)
                         
@@ -107,7 +109,7 @@ if (first()){
                 OutOfDate:removeString(1)
                 FileData:removeString(2)
                 if (Updated<=OutOfDate:count()){ 
-                    writeData(OutOfDate[1,string],FileData[2,string])                    
+                    writeData(OutOfDate[1,string],FileDataStrings[OutOfDate[1,string],string])                    
                 }
                 else{
                     colorPrint("Autoupdate","Finished updating! Please close the currently open HMT files and open the updated ones located in:","e2shared/holography_modelling_tool","")        
