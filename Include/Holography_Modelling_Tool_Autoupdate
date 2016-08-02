@@ -187,7 +187,7 @@ if (chatClk(owner())){
 #IMPLEMENTATION FOR AUTOUPDATING
 #[
 if (first()){
-    #include "holography_modelling_tool/include/Holography_Modelling_Tool_Autoupdate"    
+    #include "e2shared/holography_modelling_tool/include/Holography_Modelling_Tool_Autoupdate"    
 }
 
 #ifdef runOnHTTP(number) 
