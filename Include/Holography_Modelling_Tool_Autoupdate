@@ -148,6 +148,25 @@ if (first()){
             }
         }
         
+        function void callInfo(){
+            if (UpdateAllowed){
+                local OutOfDateCopy = OutOfDate:clone()
+                for(I=1,OutOfDateCopy:count()){
+                    for(J=1,Missing:count()){
+                        if (OutOfDateCopy[I,string] == Missing[J,string]){
+                            OutOfDateCopy:removeString(I)        
+                        }   
+                    }    
+                }
+                for(I=1,OutOfDateCopy:count()){
+                    colorPrint("AutoUpdater","Found, Out of date:",OutOfDateCopy[I,string],"")    
+                }  
+                for(I=1,Missing:count()){
+                    colorPrint("AutoUpdater","Missing:",Missing[I,string],"")             
+                }            
+            }    
+        }
+        
         checkFile(HeaderFile)
         
         UpdateTable[2,table] = table()
@@ -158,31 +177,6 @@ if (first()){
     #endif
 }
 
-if (chatClk(owner())){
-    if (lastSaid():lower()=="-info"){
-        if (UpdateAllowed){
-            local OutOfDateCopy = OutOfDate:clone()
-            for(I=1,OutOfDateCopy:count()){
-                for(J=1,Missing:count()){
-                    if (OutOfDateCopy[I,string] == Missing[J,string]){
-                        OutOfDateCopy:removeString(I)        
-                    }   
-                }    
-            }
-            for(I=1,OutOfDateCopy:count()){
-                colorPrint("AutoUpdater","Found, Out of date:",OutOfDateCopy[I,string],"")    
-            }  
-            for(I=1,Missing:count()){
-                colorPrint("AutoUpdater","Missing:",Missing[I,string],"")             
-            }            
-        }     
-    }
-    elseif (lastSaid():lower()=="-update"){
-        if (UpdateAllowed){
-            writeData(OutOfDate[1,string],FileData[1,string])        
-        }    
-    }
-}
 
 #IMPLEMENTATION FOR AUTOUPDATING
 #[
@@ -190,7 +184,18 @@ if (first()){
     #include "e2shared/holography_modelling_tool/include/Holography_Modelling_Tool_Autoupdate"    
 }
 
-#ifdef runOnHTTP(number) 
+#ifdef runOnHTTP(number)
+    if (chatClk(owner())){
+        if (lastSaid():lower()=="-info"){
+            callInfo() 
+        }
+        elseif (lastSaid():lower()=="-update"){
+            if (UpdateAllowed){
+                writeData(OutOfDate[1,string],FileData[1,string])        
+            }    
+        }
+    }
+ 
     if (clk("re-write")){
         writeData(PathToWrite,DataToWrite)        
     }
