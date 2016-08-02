@@ -1,6 +1,6 @@
 @name Holography Modelling Tool Autoupdate
 @persist [HeaderFile CheckFile LoadFile MOTD]:string [UpdateTable FileNames FileData ReadQueue OutOfDate Missing]:table CurrentLoad
-@persist UpdateAllowed InstallAllowed [PathToWrite DataToWrite]:string Updated
+@persist UpdateAllowed [PathToWrite DataToWrite]:string Updated
 
 if (first()){
     #include "e2shared/holography_modelling_tool/include/Holography_Modelling_Tool_SharedFuncs"
@@ -135,8 +135,8 @@ if (first()){
             }
             else{
                 if (Missing:count()==(FileData:count()-1)){
-                    InstallAllowed = 1
-                    colorPrint("Autoupdate","None of the required files are in the right place for Autoupdate to work! You can type","-install","to make a fresh new version in the e2shared folder.")                       
+                    UpdateAllowed = 1
+                    colorPrint("Autoupdate","None of the required files are in the right place for Autoupdate to work! You can type","-update","to make a fresh new version in the e2shared folder.")                       
                 }
                 elseif (OutOfDate:count()>0){
                     printColor(vec(0,255,0),"[HMT Autoupdate]",vec(0,175,0),"["+Version+"] ",vec(255)," Your current version of HMT is",vec(225,0,0)," OUT OF DATE.",vec(255)," Please type ",vec(0,161,255),"-update ",vec(255),"to update! ",vec(255),"Typing ",vec(0,161,255),"-info",vec(255)," will tell you what files need to update.")                                               
@@ -182,16 +182,13 @@ if (chatClk(owner())){
             writeData(OutOfDate[1,string],FileData[1,string])        
         }    
     }
-    elseif (lastSaid():lower()=="-install"){
-        
-    }
 }
 
 #IMPLEMENTATION FOR AUTOUPDATING
-
-#if (first()){
-#    #include "holography_modelling_tool/include/Holography_Modelling_Tool_Autoupdate"    
-#}
+#[
+if (first()){
+    #include "holography_modelling_tool/include/Holography_Modelling_Tool_Autoupdate"    
+}
 
 #ifdef runOnHTTP(number) 
     if (clk("re-write")){
@@ -219,3 +216,4 @@ if (chatClk(owner())){
         }
     }
 #endif
+]#
