@@ -26,8 +26,6 @@ if (first()){
         function void fileCompare(Current:string, New:string){
             if (Current != New){
                 OutOfDate:pushString(LoadFile)
-                print("Out of date "+LoadFile)
-                #print("Comparing",LoadFile," | ",FileData[CurrentLoad,string])
             }        
         }
         
@@ -127,7 +125,6 @@ if (first()){
                 fileCompare(fileRead(),FileData[CurrentLoad,string])                      
             }
             else{
-                print("Didn't find: "+LoadFile)
                 Missing:pushString(LoadFile)
                 OutOfDate:pushString(LoadFile)       
             }
