@@ -105,9 +105,9 @@ if (first()){
                 fileWrite(Path,Data)
                 colorPrint("Autoupdate","Updated:",Path,"")
                 OutOfDate:removeString(1)
-                FileData:removeString(1)
+                FileData:removeString(2)
                 if (Updated<OutOfDate:count()){ 
-                    writeData(OutOfDate[1,string],FileData[1,string])                    
+                    writeData(OutOfDate[1,string],FileData[2,string])                    
                 }
                 else{
                     colorPrint("Autoupdate","Finished updating! Please close the currently open HMT files and open the updated ones located in:","e2shared/holography_modelling_tool","")        
