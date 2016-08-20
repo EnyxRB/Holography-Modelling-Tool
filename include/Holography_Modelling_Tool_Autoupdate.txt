@@ -14,7 +14,7 @@ if (first()){
         function string reformatFilename(Name:string){
             local EndPath = Name:explode("EnyxRB")[2,string]
             local ReplaceDash = EndPath:replace("-","_")
-            local MasterMove = (">e2shared" + ReplaceDash + ".txt"):explode("/master")
+            local MasterMove = (">e2shared" + ReplaceDash):explode("/master")
             local FinalString = MasterMove[1,string]+MasterMove[2,string]
             return FinalString
         }
