@@ -12,10 +12,11 @@ if (first()){
         HeaderFile = "https://raw.githubusercontent.com/EnyxRB/Holography-Modelling-Tool/master/UpdateFormat"
         
         function string reformatFilename(Name:string){
-            local EndPath = Name:explode("EnyxRB")[2,string]
+            local EndPath = Name:explode("EnyxRB/Holography-Modelling-Tool")[2,string]
             local ReplaceDash = EndPath:replace("-","_")
             local MasterMove = (">e2shared" + ReplaceDash):explode("/master")
             local FinalString = MasterMove[1,string]+MasterMove[2,string]
+            print(FinalString)
             return FinalString
         }
         
@@ -37,7 +38,7 @@ if (first()){
           
         function void checkFile(Path:string){
             if (httpCanRequest()){
-                local LPath = Path:replace("https://raw.githubusercontent.com/EnyxRB/","")
+                local LPath = Path:replace("https://raw.githubusercontent.com/EnyxRB/Holography-Modelling-Tool/","")
                 colorPrint("AutoUpdater","Checking file:",LPath,"...") 
                 httpRequest(Path)               
             }
