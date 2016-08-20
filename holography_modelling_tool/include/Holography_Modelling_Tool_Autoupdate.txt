@@ -16,7 +16,6 @@ if (first()){
             local ReplaceDash = EndPath:replace("-","_")
             local MasterMove = (">e2shared" + ReplaceDash):explode("/master")
             local FinalString = MasterMove[1,string]+MasterMove[2,string]
-            print(FinalString)
             return FinalString
         }
         
@@ -38,7 +37,7 @@ if (first()){
           
         function void checkFile(Path:string){
             if (httpCanRequest()){
-                local LPath = Path:replace("https://raw.githubusercontent.com/EnyxRB/Holography-Modelling-Tool/","")
+                local LPath = Path:replace("https://raw.githubusercontent.com/EnyxRB/Holography-Modelling-Tool/master/","")
                 colorPrint("AutoUpdater","Checking file:",LPath,"...") 
                 httpRequest(Path)               
             }
