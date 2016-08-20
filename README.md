@@ -18,12 +18,12 @@ Installation instructions:
   Use an SVN client such as tortoiseSVN to auto update from github. I only recommend ZIP because I have implemented my own auto update option which is completely optional, unlike SVN and will only update the files I deem important to update.
 
 Useage Instructions:
-  #1. Place the Holography Modelling Tool E2 on the ground (main/Holography_Modelling_Tool.txt)
-  #2. Place the Holography Modelling Tool Slave E2 on the ground (main/Holography_Modelling_Tool_Slave.txt)
-  #3. Make your creation using the commands and controls above
-  #4. Remember to -save followed by a filename often so you dont loose your progress
-  #4. Type -export followed by the filename you wish the E2 to have
-  #5. Right click on the placed slave E2 and save it
-  #6. Got yourself a holo model
+  - #1. Place the Holography Modelling Tool E2 on the ground (main/Holography_Modelling_Tool.txt)
+  - #2. Place the Holography Modelling Tool Slave E2 on the ground (main/Holography_Modelling_Tool_Slave.txt)
+  - #3. Make your creation using the commands and controls above
+  - #4. Remember to -save followed by a filename often so you dont loose your progress
+  - #4. Type -export followed by the filename you wish the E2 to have
+  - #5. Right click on the placed slave E2 and save it
+  - #6. Got yourself a holo model
   
 Unsure about commands? Check the code of the tool itself to see the most up to date list of commands and keybinds.
