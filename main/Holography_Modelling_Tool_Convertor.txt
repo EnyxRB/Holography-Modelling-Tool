@@ -1,0 +1,297 @@
+@name Holography Modelling Tool Convertor
+@inputs 
+@outputs 
+@persist [Chat Holograms]:array [OutputPath OutputFileName ReloadingFile Code StringAdd JSON ProjectsFile]:string Index  
+@persist ConversionInterval Output:table SearchTable:array Slave:entity OverwriteQuery PrecentComplete LastPercentage
+@persist PacketRecieved Projects:table [PathToWrite StringToWrite]:string ProjectsLoaded
+@trigger 
+
+#[Conversion...
+Unsure of how to convert your old hologram files!?:
+Open e2shared/holography_modelling_tool/documentation/convertor and check out the files to read the instructions
+]#
+
+if (first() | dupefinished()){
+    #include "e2shared/holography_modelling_tool/include/Holography_Modelling_Tool_SharedFuncs"
+
+    #----SETTINGS----#
+    OutputFileName = "camper_holos"   #This is the name of the converted file that will be saved in the e2shared folder.
+                    #Example OutputFileName = Holo_Plane.txt (Underscores are used for spaces when manually saving an e2)
+    ConversionInterval = 80 #The lower the interval, the faster the conversion will progress. Min: 10, Max: 5000.
+                            #NOTE: The faster the compression speed, the higher possibility packets could go missing.
+                            #Although I've added a packet sniffer to detect packets not retrieving, so test different values out.
+    #----------------#
+            
+    function void resetIncs(){
+        PacketRecieved = 1
+        Index = 0 #Index starts at 1 as we want to ignore the first integer in the explode array.  
+    }
+    
+    function array findHolograms(){
+        findIncludePlayerProps(owner())
+        findByClass("gmod_wire_hologram")
+        return findToArray()    
+    }    
+    
+    function void convertHolograms(){   
+        resetIncs()                
+        Holograms = findHolograms()
+        colorPrint("CONVERTOR","Holograms found to convert:",Holograms:count():toString(),"")
+        if (Holograms:count()>0){
+            colorPrint("CONVERTOR","Conversion Process Started...","","")
+            timer("convert",ConversionInterval)
+        }
+        else{
+            colorPrint("CONVERTOR","The code you are converting must spawn at least 1 hologram! Please try again.","","")    
+        }
+    }
+    
+    colorPrint("CONVERTOR","Please spawn the updated holo E2 you wish to convert.","","")
+    
+    ProjectsFile = ">e2shared/holography_modelling_tool_data/projects.txt"
+    
+    if (fileCanLoad()){
+        fileLoad(ProjectsFile)    
+    }
+    else{
+        timer("projectsReload",100)    
+    }    
+    
+    #PRELIMINARY TESTS
+    if (!OutputFileName:find(".txt")){
+        if (OutputFileName:find(".")){
+            OutputFileName = OutputFileName:explode(".")[1,string] + ".txt"  
+        }
+        else{
+            OutputFileName = OutputFileName + ".txt"        
+        }          
+    }
+    
+    OutputPath = ">e2shared/holography_modelling_tool_data/saved/" + OutputFileName
+    ConversionInterval = clamp(ConversionInterval,10,5000)
+                           
+    for(I=1,8){
+        Output[I,table] = table()
+    }
+    
+    runOnChat(1)
+    runOnFile(1)
+    dsJoinGroup("hmconvertor")
+}
+
+if (fileClk(OutputPath)){
+    if (fileStatus() == 1){
+        colorPrint("CONVERTOR","WARNING. There is already a file converted with the filename:",OutputFileName,"Are you sure you want to OVERWRITE it? (Yes/No)")
+        OverwriteQuery = 1        
+    }
+    else{
+        convertHolograms()
+    }    
+}
+
+#[elseif (fileClk(InputPath)){
+    if (fileStatus() == 1){
+        colorPrint("File found successfully!","","")
+        Code = fileRead()
+        convertNextStage()  
+    }
+    else{
+        colorPrint("No file was found in your e2shared folder named:",FileName,"")
+        colorPrint("Please start over with a correct filename.","","")     
+    }
+}]#
+
+if (fileClk(ProjectsFile)){    
+    if (fileStatus() == 1){
+        Projects = vonDecodeTable(fileRead())            
+    }
+    else{
+        if (fileCanWrite()){
+            fileWrite(ProjectsFile,vonEncode(table()))   
+        }
+        else{
+            PathToWrite = ProjectsFile
+            StringToWrite = vonEncode(table()) 
+            timer("rewriteProjects",500)   
+        }   
+    }
+    ProjectsLoaded = 1       
+}
+
+if (clk("reload")){
+    if (fileCanLoad()){
+        colorPrint("CONVERTOR","Loading file to convert...","","")        
+        fileLoad(ReloadingFile)
+        stoptimer("reload")    
+    }
+    else{
+        colorPrint("CONVERTOR",". . .","","")
+        timer("reload",800)        
+    }    
+}
+
+elseif (clk("projectsReload")){
+    if (fileCanLoad()){
+        fileLoad(ProjectsFile)    
+    }
+    else{
+        timer("projectsReload",100)  
+    }  
+}
+
+if (chatClk(owner())){
+    if (lastSaid():lower()=="-convert"){
+        hideChat(1)
+        if (ProjectsLoaded){
+            if (Slave:isValid()){            
+                colorPrint("CONVERTOR","Checking output file...","","")
+                if (fileCanLoad()){
+                    fileLoad(OutputPath) #Checking if there is already a file here, we don't want to automatically overwrite! 
+                }
+                else{
+                    ReloadingFile = OutputPath
+                    timer("reload",800)    
+                }  
+            }
+            else{
+                colorPrint("CONVERTOR","Please spawn the updated hologram E2 you wish to convert first!","","")    
+            } 
+        }
+        else{
+            colorPrint("CONVERTOR","Please let the project files load first. Try again in a few seconds.","","")    
+        }         
+    }
+    elseif (lastSaid():lower()=="yes"){        
+        if (OverwriteQuery){
+            hideChat(1)
+            OverwriteQuery = 0
+            convertHolograms()            
+        }    
+    }
+    elseif (lastSaid():lower()=="no"){
+        if (OverwriteQuery){
+            hideChat(1)
+            OverwriteQuery = 0
+            colorPrint("CONVERTOR","Please rename your output filename to something unused and refresh the E2","","")               
+        }    
+    }  
+}
+
+if (dsClk("init")){
+    Code = dsGetString()
+    Slave = dsGetSender()
+    colorPrint("CONVERTOR","Slave to convert connected:",Slave:getName(),"")    
+}
+
+if (dsClk("holodata")){
+    local Table = dsGetTable()
+    if (Table:exists(1)){
+        #OUTPUT TABLE FORMAT
+        #Output[1,table] = HoloIndexs to be created (Number)
+        #Output[2,table] = Position e:toWorld of holos (Vector) 
+        #Output[3,table] = Angles of holos (Angle)       
+        #Output[4,table] = Model of holos (String)
+        #Output[5,table] = Scales of holos (Vector)
+        #Output[6,table] = Colors of holos (Vector)
+        #Output[7,table] = Materials of holos (String)
+        #Output[8,table] = Alphas of holos (Number)        
+        
+        PacketRecieved = 1
+        
+        Output[1,table]:pushNumber(Table[1,number])
+        Output[2,table]:pushVector(Table[2,vector])
+        Output[3,table]:pushAngle(Table[3,angle])
+        Output[4,table]:pushString(Table[4,string])
+        Output[5,table]:pushVector(Table[5,vector])
+        Output[6,table]:pushVector(Table[6,vector])
+        Output[7,table]:pushString(Table[7,string])
+        Output[8,table]:pushNumber(Table[8,number])
+        
+        if (Output[1,table]:count() == Holograms:count()){
+            JSON = vonEncode(Output)
+            colorPrint("CONVERTOR","Saving converted file with name:",OutputFileName,"") 
+            if (fileCanWrite()){
+                fileWrite(OutputPath,JSON) 
+                colorPrint("CONVERTOR","You can now load the converted project with the Tool using:","-load "+OutputFileName,"")
+                
+                local Found = 0
+                for(I=1,Projects:count()){
+                    if (Projects[I,string] == OutputFileName){
+                        Found = 1
+                        break            
+                    }
+                }
+
+                if (!Found){
+                    Projects:pushString(OutputFileName)
+                    
+                    if (fileCanWrite()){
+                        fileWrite(ProjectsFile,vonEncode(Projects))   
+                    }
+                    else{
+                        PathToWrite = ProjectsFile
+                        StringToWrite = vonEncode(Projects) 
+                        timer("rewriteProjects",50)   
+                    } 
+                }                   
+            }
+            else{
+                timer("rewrite",800)    
+            }    
+        }         
+    }
+    else{
+        colorPrint("CONVERTOR","Packet corrupt. Please make sure you have only one E2 that spawns holograms placed! Try again after removing...","","")
+        stoptimer("convert")        
+    }        
+}
+
+if (clk("rewrite")){
+    if (fileCanWrite()){
+        fileWrite(OutputPath,JSON)
+        colorPrint("CONVERTOR","You can now load the converted project with the Tool using:","-load "+OutputFileName,"")    
+    }
+    else{
+        colorPrint("CONVERTOR",". . .","","")
+        timer("rewrite",800)    
+    }          
+}
+
+elseif (clk("rewriteProjects")){
+    if (fileCanWrite()){
+        fileWrite(PathToWrite,StringToWrite)    
+    }
+    else{
+        timer("rewriteProjects",50)   
+    }        
+}
+
+#BEGINNING OF CONVERSION PROCESSES
+elseif (clk("convert")){
+    if (PacketRecieved){
+        Index++
+        PacketRecieved = 0
+    }
+
+    dsSendDirect("getholoinfo",Slave,Holograms[Index,entity])
+
+    #[local String = SearchTable[Index,string]
+    local HoloIndex = 0
+    if (String:find(",")){ #Possible other holo attributes defined in holoCreate
+        HoloIndex = String:explode(",")[1,string]:toNumber()  
+        print(HoloIndex)      
+    }
+    else{
+        HoloIndex = String:explode(")")[1,string]:toNumber()
+        print(HoloIndex)       
+    }]#
+    PrecentComplete = (Index/Holograms:count())*100
+    if (PrecentComplete >= (LastPercentage+10)){
+        LastPercentage = floor(PrecentComplete)
+        colorPrint("CONVERTOR","Conversion Progress:",LastPercentage+"%","...")
+    }
+    
+    if (Index<Holograms:count()){
+        timer("convert",ConversionInterval)    
+    } 
+}
