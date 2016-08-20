@@ -1038,4 +1038,3 @@ if (clk("motd")){
     colorPrint("TOOL","MOTD:",MOTD,"")
     timer("motd",40000)    
 }
-
