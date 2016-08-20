@@ -6,9 +6,11 @@ What does it do?:
   - This tool enables a more practical way of creating and modelling detailed hologram models in Expression2. Meaning you don't have to edit that same line of code over and over just to get the damn thing in the right position. I've been there before. Even for the experienced holo modelers, this makes the entire process massively quicker... once you know the commands...
 
 Installation instructions:
-
+  
+  IMPORTANT: You MUST paste the holography_modelling_tool folder in e2shared, not Holography-Modelling-Tool-master! If you do this incorrectly, no auto updates will work and shared files will fail!
+  
   - Recommended:
-  Download ZIP and paste entire folder into steamapps/garrysmod/garrysmod/data/expression2/e2shared.
+  Download ZIP and copy the holography_modelling_tool folder from the master, then paste this folder into steamapps/garrysmod/garrysmod/data/expression2/e2shared.
   Why in the e2shared folder? - The software uses a bunch of file write and read functions and therefore due to wiremods coding, requires the code to be written/examined to be one of a select few chosen folders. Put it in e2shared and you will not have any problems.
   
   - Other:
