@@ -1,0 +1,1041 @@
+@name Holography Modelling Tool
+@persist CurHolo Index [Holos HoloPos HoloAng HoloScale HoloColor HoloModel HoloMaterial HoloAlpha]:table IncMove IncScale
+@persist IncAng Mode LastHolo  CurIndex LastIndex Slave:entity [QMark Code Filename CopyMat CopyModel]:string MirrorIndex
+@persist [CopyColor CopyScale CopyPos]:vector CopyAng:angle CopyAlpha [FileLoading FileName]:string
+@persist [DecodedTable Projects]:table SpawnIndex LoadQuery DeleteIndex [ProjectsFile PathToWrite StringToWrite]:string
+@persist ProjectsLoaded CodeIndex
+
+"--------------------------------------------AUTHOR--------------------------------------------------"
+"####################################################################################################"
+"##      ######     #####  ######  ########  #####  ######  #############       ######     ##########"
+"##  ##########  #  #####  #######  ######  #######  ####  ##############  #########  ####  #########"
+"##  ##########  ##  ####  ########  ####  #########  ##  ###############  ###############  #########"
+"##      ######  ###  ###  #########  ##  ###########    ################       #########  ##########"
+"##  ##########  ####  ##  ##########   ############  ##  ###############  #########   ##############"
+"##  ##########  #####  #  ##########   ###########  ####  ##############  #########  ###############"
+"##      ######  ######    ##########   ##########  ######  #############       ####        #########"
+"####################################################################################################"
+
+"Steam: http://steamcommunity.com/id/enyx-aeropath/"
+"Github: https://github.com/EnyxRB/Holography-Modelling-Tool"
+"----------------------------------------------------------------------------------------------------"
+
+#TODO: code compression (procedural function and timer setting),rotation around a point (new) common materials list to search keywords e.g. -mat 1.
+#keys revamp, GUI with plane interception and buttons, colour mixer and material show.
+
+#---------------------------------WHAT DOES IT DO?---------------------------------#
+# ---- HOLOGRAPHY is the science and practice of making holograms ---- #
+# This tool enables a more practical way of creating and modelling detailed hologram models in Expression2.
+# Meaning you don't have to edit that same line of code over and over just to get the damn thing
+# in the right position. I've been there before. Even for the experienced holo modelers, this makes the entire process
+# massively quicker... once you know the commands...
+#--------------------------------------------------------------------------#
+
+#---------------------------------COMMANDS---------------------------------#
+#   -i model : creates a new hologram with said model
+#   -delete : deletes the current hologram from the program
+#   -inc number : e.g. -inc 5. sets the incremental for the currently selected mode.
+#   -move x,y,z : moves the current hologram to given x,y,z coordinates
+#   -move reset : resets the position of the current hologram back to starting position
+#   -scale reset : resets the scale of the current hologram
+#   -scale double : doubles the current scale of the current hologram
+#   -scale half : halves the current scale of the current hologram
+#   -scale x,y,z : changes the unit scale of the current hologram to vec(x,y,z). Same as holoScaleUnits()
+#   -scalem x,y,z : changes the multplier scale of the current hologram vec(x,y,z). Same as holoScale()
+#   -ang p,y,r : changes the current angles to the said pitch,yaw and roll
+#   -ang reset : resets the angle of the current hologram to it's starting angle
+#   -color R,G,B : e.g. -color 255,0,0. changes the color of the current hologram to said color values
+#   -alpha number : changes the alpha of the current hologram to said number
+#   -mat material : changes the holograms material to the said material
+#   -mirror direction (forward/right/up) : creates a mirrored hologram around the e2 across the said plane
+#   -copy model/pos/scale/ang/color/mat/alpha : copies said value of properties of current hologram
+#   -paste model/pos/scale/ang/color/mat/alpha : pastes the last copied value onto the curent hologram
+#   -dupe : duplicates the current selected hologram in the exact same position
+#   -save name : saves the project as the given filename in the project folder
+#   -save : in the case that you have already given a filename to save as, you can use save to quick save
+#   -load name : finds and loads the project with the given filename
+#   -export filename: sets the code required to spawn your creation in the slave e2 and changes slave name to said filename
+#   -projects :  prints a list of all projects currently saved in the project folder
+#--------------------------------------------------------------------------#
+
+#---------------------------------CONTROLS---------------------------------#
+#   numpad1 = changes current mode to move mode, allowing movement with keys
+#   numpad2 = changes current mode to scale mode, allowing unit scaling with keys
+#   numpad3 = changes current mode to angling mode, allowing angling with keys
+#   numpad8 = move holo forward /pitch holo down
+#   numpad5 = move holo backward/pitch holo up
+#   numpad4 = move holo left/yaw holo left
+#   numpad6 = move holo right/yaw holo right
+#   numpad- = move holo up/roll holo left
+#   numpad+ = move holo down/roll holo right
+#   numpad/ = cycles to the previous hologram in the program
+#   numpad* = cycles to the next hologram in the program
+#--------------------------------------------------------------------------#
+
+#-------------------------------INSTRUCTIONS-------------------------------#
+#1. Place the Holography Modelling Tool E2 on the ground
+#2. Place the Holography Modelling Tool Slave E2 on the ground
+#3. Make your creation using the commands and controls above
+#4. Remember to -save followed by a filename often so you dont loose your progress
+#4. Type -export followed by the filename you wish the E2 to have
+#5. Right click on the placed slave E2 and save it
+#6. Got yourself a holo model
+#--------------------------------------------------------------------------#
+
+#--------------------------------SLAVE CODE--------------------------------#
+#If you don't have the slave chip already, simply copy the code below into a E2 and follow the instructions.
+#[
+@name Holography Modelling Tool Slave
+@inputs 
+@outputs 
+@persist Boss:entity
+@trigger 
+
+if (first() | dupefinished()){
+    Boss = dsProbe("hmtool")[1,entity]
+    dsSendDirect("init",Boss,0)    
+}
+]#
+
+#---------------------------------CHANGELOG---------------------------------#
+#--------------------------------VERSION 1.1--------------------------------#
+#(new) Added seperate incremental for angling so angling inc can start at 90.
+#(new) New command -inc ang number to change the incremental of angling.
+#(new) Added name update on creating and deleting holos, to show user the number of holos active.
+#(fix) On deleting holos until last holo remains, bug whereby last hologram couldn't be selected.
+#(new) Switches to angling mode upon using -inc ang command, aswell as setting the ang inc.
+#(new) Added mirror function -mirror direction (forward/right/up) allowing to mirror holograms across planes.
+#(change) Changed control layout to make moving/scaling/angling holograms more simple.
+#--------------------------------VERSION 1.2--------------------------------#
+#(new) Added dupe function -dupe which creates a replica of the current hologram in the same position.
+#(new) Added copy and paste functions for all holo properties. Alowing to copy a property from one holo and place on another.
+#(change) Changed standard prints to el super fancio colorPrint to make this project seem like it's actually important.
+#(new) -model string function to set the model after creation, might be helpful if you make a mistake.
+#(new) -scale x,y,z function for custom scaling by unit amounts. Same as holoScaleUnits().
+#(new) -scalem x,y,z function for custom scaling by multiple amounts. Same as holoScale().
+#(change) Changed around layout of scaleHolo function to allow multiplier scaling as well as unit scaling.
+#(new) Added version control compatibility, checks current version against online updated version.
+#(new) Added -update command for users with out of date / modified versions of the software, this whole version control thing is just for fun.
+#--------------------------------VERSION 1.3--------------------------------#
+#(change) Changed method of roation to rotateAroundAxis method, allowing for easier and more memerable rotations.
+#(new) Added update telling user new inc value for ang, scaling and moving holos.
+#(change) Github auto update URL changed to new folder arrangement.
+#(change) Updated the auto update response print.
+#(new) Added parenting holos to entity on spawn.
+#(fix) Fixed mirror function to be more accurate and mathematically correct.
+#(change) Changed colorPrint functions as well as all printColors with version having a darker green tag.
+#(change) Rebranded from Simple Holo Model Creator to Holography Modelling Tool because, it's not that simple anymore... ;o
+#(new) Added a what is dis section for people finding the source from ports other than wiremod.
+#(new) Added author information so people can send me feedback.
+#--------------------------------VERSION 1.4--------------------------------#
+#(new) Added Holography Modelling Tool Convertor file to project.
+#(new) Added Holography Modelling Tool Include file to project.
+#(new) Added Holography Modelling Tool Convert Example file to project.
+#(new) Tool now supports loading and saving of projects, to be able to re-edit at any time.
+#(new) Added command -load filename to load projects of the correct format to the tool.
+#(new) Added command -save filename to save current project to the correct format for the tool to be able to load.
+#(new) Procedural spawn for holograms when loading designs to the software.
+#(change) Changed -finish to -export.
+#(change) Optimized cycleHolo function.
+#(new) Loopback for cycleHolo added.
+#(new) Added cycling for current holos so you can keep iterating through the choices.
+#(new) Added procedural delete to use for loading over an already loaded project.
+#(new) Added -projects command that gives a list of all the projects in the system.
+#(fix) Fixed spawn error when loading the same project file that was currently open by adding wipe parameter to delete function.
+#(new) Added holo delete print on deleting a holo
+#(change) Changed from json to von for encoding/decoding project tables/files, so that nexuscore isn't required to run.
+#(new) Completely reworked and improved autoupdate feature so user should never again have to redownload the newest version from github, new files can be auto obtained.
+#(new) New auto update checker which checks every file in the github repository selected to be included in the package by me.
+#--------------------------------VERSION 1.5--------------------------------#
+#(new) Added procedural spawning for exported holo code to ensure all holograms are spawned without fail.
+#(change) Moved required position of root folder to >e2shared as this is required for file write and read.
+#(new) Shared functions file, holding local version to be used universally by other members.
+#(change) Numpad keys 1,2 and 3 are now used to change modes, therefore I've removed chat commands to switch modes.
+#(new) Added procedural code creation so number of holos to export is not limited by the tick quota.
+#(change) Removed inc ang and overloaded variable inc to change incremental of currently selected mode.
+#---------------------------------------------------------------------------#
+
+if (first() | dupefinished()){    
+    #include "e2shared/holography_modelling_tool/include/Holography_Modelling_Tool_SharedFuncs"
+    #include "e2shared/holography_modelling_tool/include/Holography_Modelling_Tool_Autoupdate"
+
+    setName("Holography Modelling Tool ("+Version+")")
+    
+    runOnKeys(owner(),1)
+    runOnChat(1)
+    runOnFile(1)
+    dsJoinGroup("hmtool") 
+            
+    QTable=array("a")
+    QMark = vonEncode(QTable):explode("")[1,string]
+    
+    ProjectsFile = ">e2shared/holography_modelling_tool_data/projects.txt"
+        
+    if (fileCanLoad()){
+        fileLoad(ProjectsFile)    
+    }
+    else{
+        timer("reload",100)    
+    }
+    
+    colorPrint("TOOL","Please place down the Holography Modelling Tool Slave E2 on the ground","","")
+    
+    function number holoID(Index:number){
+        return Holos[Index,number]    
+    }
+    
+    function void number:indexHolo(Model:string){
+        Holos:pushNumber(This)
+        setName("Holography Modelling Tool ("+Version+") - "+Holos:count()+" Holograms") 
+        CurIndex = Holos:count()
+        CurHolo = Holos[Holos:count(),number]
+        HoloColor[CurIndex,vector] = vec(255)
+        HoloAlpha[CurIndex,number] = 255
+        HoloModel[CurIndex,string]=Model        
+        if (Holos:exists(LastIndex)){
+            holoColor(LastHolo,HoloColor[LastIndex,vector])
+        }
+        HoloScale[CurIndex,vector] = holoEntity(CurHolo):boxSize()
+        holoScaleUnits(CurHolo,HoloScale[CurIndex,vector])
+        LastHolo = CurHolo
+        LastIndex = CurIndex        
+    }
+            
+    function void number:moveHolo(Vector:vector){
+        holoPos(holoID(This),Vector)
+        HoloPos[This,vector]=entity():toLocal(Vector)
+        colorPrint("TOOL","Offset:",round(Vector-entity():pos(),3):toString(),"")       
+    }
+    
+    function void number:scaleHolo(Vector:vector,Mirror:number,Multiple:number){
+        if (Mirror){
+            HoloScale[This,vector]=Vector
+            holoScaleUnits(holoID(This),HoloScale[This,vector])
+            colorPrint("TOOL","ScaleUnits:",round(HoloScale[This,vector],3):toString(),"")        
+        }
+        elseif (Multiple){
+            HoloScale[This,vector] = holoEntity(Holos[This,number]):boxSize()*Vector
+            holoScaleUnits(holoID(This),HoloScale[This,vector])
+            colorPrint("TOOL","ScaleMultiple:",round(Vector,3):toString(),"") 
+        }
+        else{
+            HoloScale[This,vector]=HoloScale[This,vector]+Vector 
+            holoScaleUnits(holoID(This),HoloScale[This,vector])   
+            colorPrint("TOOL","ScaleUnits:",round(HoloScale[This,vector],3):toString(),"")          
+        }                
+    }
+        
+    function void number:colorHolo(Vector:vector){
+        HoloColor[This,vector]=Vector
+        holoColor(holoID(This),Vector)         
+    }
+    
+    function void number:modelHolo(String:string){
+        HoloModel[This,string]=String
+        holoModel(holoID(This),String)         
+    }    
+    
+    function void number:angleHolo(Angle:angle,Reset:number,Mirror:number){
+        local Ang = ang(0,0,0)
+        if (!Reset){
+            if (Mirror){
+                Ang = Angle        
+            }
+            else{
+                local Angles = holoEntity(holoID(This)):angles()  
+                #print(holoEntity(holoID(This)):right():normalized())
+                Angles = Angles:rotateAroundAxis(vec(0,1,0),Angle:pitch())
+                Angles = Angles:rotateAroundAxis(vec(0,0,1),Angle:yaw())
+                Angles = Angles:rotateAroundAxis(vec(1,0,0),Angle:roll())  
+                Ang = Angles 
+            }
+        }
+        colorPrint("TOOL","Angle:",round(Ang,3):toString(),"")
+        HoloAng[This,angle]=entity():toLocal(Ang)
+        holoAng(holoID(This),Ang)    
+    }
+    
+    function void number:alphaHolo(Alpha:number){
+        HoloAlpha[This,number]=Alpha
+        holoAlpha(holoID(This),Alpha)    
+    }
+    
+    function void number:materializeHolo(String:string){
+        HoloMaterial[This,string]=String
+        holoMaterial(holoID(This),String)   
+    }
+
+    function void number:deleteHolo(Wipe:number){        
+        holoDelete(holoID(This))
+        colorPrint("TOOL","Delted Hologram #",holoID(This):toString(),"")
+        if (!Wipe){
+            Holos:removeNumber(This) 
+            HoloPos:removeVector(This)  
+            HoloAng:removeAngle(This)
+            HoloScale:removeVector(This)
+            HoloColor:removeVector(This) 
+            HoloModel:removeString(This)
+            HoloMaterial:removeString(This)
+            HoloAlpha:removeNumber(This)
+            setName("Simple Holo Model Creator ("+Version+") - "+Holos:count()+" Holograms")
+    
+            if (CurIndex>1){
+                CurIndex-=1           
+            }
+            elseif (holoID(This)<Holos:count()){
+                CurIndex+=1         
+            }
+            else{
+                CurIndex=1        
+            }
+            CurHolo = Holos[CurIndex,number]
+            LastHolo=CurHolo   
+            LastIndex = CurIndex        
+            holoColor(CurHolo,vec(255,0,191))
+        }        
+    }
+        
+    function void setHoloCol(){
+        colorPrint("TOOL","Changing to edit Hologram #",CurHolo:toString(),"") 
+        if (Holos:exists(LastIndex)){
+            holoColor(LastHolo,HoloColor[LastIndex,vector])
+        }
+        holoColor(CurHolo,vec(255,0,191))
+        LastHolo = CurHolo
+        LastIndex = CurIndex          
+    }
+
+    function void cycleHolo(Up:number,Down:number){
+        
+        if (Up){
+            if ((CurHolo)<Holos:max()){  
+                CurIndex+=1 
+            }
+            else{
+                CurIndex=1        
+            }
+
+        }
+        elseif (Down){
+            if ((CurHolo)>Holos:min()){
+                CurIndex-=1
+            }
+            else{
+                CurIndex=Holos:maxIndex()    
+            }
+        }
+    
+        CurHolo = Holos[CurIndex,number]
+        setHoloCol()
+        LastHolo = CurHolo
+        LastIndex = CurIndex  
+              
+    }
+
+    function void createCode(){
+Code = 
+"@name "+Filename+"
+@persist SpawnIndex Index Holos:table Scale GeneralParent:entity
+
+if (first() | dupefinished()){
+    
+    #CUSTOM PROPERTIES#
+    SpawnIndex = 0 #Which number do you want the indexing to start at?
+    GeneralParent = entity() #The parent all holograms will be parented to. This can be overriden with normal holoParent.
+    Scale = 1 #What scale do you want the model to build to?
+    
+    function void indexHolo(LPos:vector,Model:string,LAng:angle,Scale:vector,Color:vector,Material:string,Alpha:number){
+        Index++
+        Holos[Index,table] = table() 
+        Holos[Index,table][1,vector] = LPos
+        Holos[Index,table][2,string] = Model   
+        Holos[Index,table][3,angle] = LAng 
+        Holos[Index,table][4,vector] = Scale 
+        Holos[Index,table][5,vector] = Color 
+        Holos[Index,table][6,string] = Material 
+        Holos[Index,table][7,number] = Alpha      
+    }
+    
+    function void createHolo(Ind:number){
+        local Cur = Holos[Ind,table]
+        holoCreate(Ind)
+        holoCreate(Ind)
+        holoCreate(Ind)
+        holoCreate(Ind)
+        holoPos(Ind,entity():toWorld(Cur[1,vector]*Scale))
+        holoParent(Ind,GeneralParent)
+        holoModel(Ind,Cur[2,string])
+        holoAng(Ind,entity():toWorld(Cur[3,angle]))
+        holoScaleUnits(Ind,Cur[4,vector]*Scale)
+        holoColor(Ind,Cur[5,vector])
+        holoMaterial(Ind,Cur[6,string])
+        holoAlpha(Ind,Cur[7,number])        
+    }
+    
+"
+    CodeIndex=0
+    timer("formatcode",30)
+    }
+
+    function void createHolo(Model:string){
+        Index++
+        holoCreate(Index)
+        holoCreate(Index)
+        holoCreate(Index)
+        holoParent(Index,entity())
+        holoColor(Index,vec(255,0,191))
+        holoModel(Index,Model)         
+        if (Model!=""){
+            if (holoEntity(Index):model()==("models/holograms/cube.mdl")){
+                colorPrint("TOOL","No model found for this hologram, try again...","","")
+                holoDelete(Index)    
+            }
+            else{
+                Index:indexHolo(Model)
+                colorPrint("TOOL","Hologram #",Holos:count():toString(),"created sucessfully")
+            }
+        }
+        else{
+            Index:indexHolo(Model)
+            colorPrint("TOOL","Hologram #",Holos:count():toString(),"created sucessfully")
+        }
+    }    
+    
+    function void number:mirrorHolo(Direction:string){
+        if (holoCanCreate()){
+            local IsDir = 0
+            local Dir = vec()
+            MirrorIndex = CurIndex
+
+            if (Direction=="forward"){
+                Dir = entity():forward()
+                colorPrint("TOOL","Hologram #",CurHolo:toString()," mirrored across plane forward") 
+                IsDir=1
+            }
+            if (Direction=="right"){ 
+                Dir = entity():right()
+                colorPrint("TOOL","Hologram #",CurHolo:toString()," mirrored across plane sideways")
+                IsDir=1
+            }
+            if (Direction=="up"){
+                Dir = entity():up()
+                colorPrint("TOOL","Hologram #",CurHolo:toString()," mirrored across plane upwards")
+                IsDir=1
+            }
+            if (IsDir){     
+                local DirNorm = Dir:normalized()
+                Dir = Dir - 2 * DirNorm * (Dir:dot(DirNorm)) 
+                local Ang = holoEntity(CurHolo):angles()
+                local Pos = holoEntity(CurHolo):pos()
+                local V = holoEntity(CurHolo):toWorld(holoEntity(CurHolo):massCenter())
+                
+                Ang = holoEntity(CurHolo):toWorld(ang(180,0,0))
+                Ang = Ang:rotateAroundAxis(DirNorm, 180)
+                
+                createHolo(HoloModel[MirrorIndex,string])
+                
+                if (V == Pos){
+                    CurIndex:angleHolo(Ang,0,1)    
+                }
+                else{
+                    local LocalV = holoEntity(CurHolo):toLocal(V)
+                    CurIndex:angleHolo(Ang,0,1)
+                    Pos = Pos + (V - holoEntity(CurHolo):toWorld(LocalV))    
+                }
+                
+                local Length = DirNorm:dot(entity():pos() - V)
+                local Vec = DirNorm * Length * 2
+                CurIndex:moveHolo(Pos + Vec)                              
+
+                CurIndex:colorHolo(HoloColor[MirrorIndex,vector])
+                CurIndex:materializeHolo(HoloMaterial[MirrorIndex,string])
+                CurIndex:scaleHolo(HoloScale[MirrorIndex,vector],1,0)
+                CurIndex:alphaHolo(HoloAlpha[MirrorIndex,number])
+                holoColor(CurHolo,vec(255,0,191))
+            }
+        }
+        else{colorPrint("TOOL","Either hit maximum hologram limit or burst limit","","")}            
+    }
+    
+    function void number:dupeHolo(){
+        if (holoCanCreate()){
+            MirrorIndex = CurIndex 
+            local LPos = entity():toLocal(holoEntity(Holos[MirrorIndex,number]):pos())  
+            createHolo(HoloModel[MirrorIndex,string])
+            CurIndex:moveHolo(entity():toWorld(LPos))
+            CurIndex:angleHolo(HoloAng[MirrorIndex,angle],0,1)
+            CurIndex:colorHolo(HoloColor[MirrorIndex,vector])
+            CurIndex:materializeHolo(HoloMaterial[MirrorIndex,string])
+            CurIndex:scaleHolo(HoloScale[MirrorIndex,vector],1,0)
+            CurIndex:alphaHolo(HoloAlpha[MirrorIndex,number])     
+            holoColor(CurHolo,vec(255,0,191))
+        }
+        else{colorPrint("TOOL","Either hit maximum hologram limit or burst limit","","")}     
+    }
+    
+    IncMove = 6 
+    IncScale = 6
+    IncAng = 45
+    Mode = 1
+    LastHolo = 999
+    LastIndex = 999         
+    
+    timer("motd",40000)    
+}
+
+if (keyClk(owner())){
+    if (owner():keyPressed("pad_6")|owner():keyPressed("pad_4")|owner():keyPressed("pad_8")|owner():keyPressed("pad_5")|owner():keyPressed("pad_minus")|owner():keyPressed("pad_plus")){
+        if (holoEntity(CurHolo):isValid()){
+            if (Mode==1){                
+                local Vec = holoEntity(CurHolo):pos()+(vec(owner():keyPressed("pad_8")-owner():keyPressed("pad_5"),owner():keyPressed("pad_4")-owner():keyPressed("pad_6"),owner():keyPressed("pad_minus")-owner():keyPressed("pad_plus"))*IncMove)
+                CurIndex:moveHolo(Vec)
+            }
+            elseif (Mode==2){
+                local Vec = (vec(owner():keyPressed("pad_8")-owner():keyPressed("pad_5"),owner():keyPressed("pad_4")-owner():keyPressed("pad_6"),owner():keyPressed("pad_minus")-owner():keyPressed("pad_plus"))*IncScale)                
+                CurIndex:scaleHolo(Vec,0,0)
+            }
+            else{
+                local Ang = (ang(owner():keyPressed("pad_8")-owner():keyPressed("pad_5"),owner():keyPressed("pad_4")-owner():keyPressed("pad_6"),owner():keyPressed("pad_plus")-owner():keyPressed("pad_minus"))*IncAng)
+                CurIndex:angleHolo(Ang,0,0)
+            }
+        }
+    }
+    elseif (owner():keyPressed("pad_1")){
+        Mode = 1
+        colorPrint("TOOL","Current mode set to:","Move","")            
+    }
+    elseif (owner():keyPressed("pad_2")){
+        Mode = 2
+        colorPrint("TOOL","Current mode set to:","Scale","")        
+    }
+    elseif (owner():keyPressed("pad_3")){
+        Mode = 3
+        colorPrint("TOOL","Current mode set to:","Angle","")        
+    }
+    elseif (owner():keyPressed("pad_multiply")|owner():keyPressed("pad_divide")){
+        cycleHolo(owner():keyPressed("pad_multiply"),owner():keyPressed("pad_divide"))        
+    }    
+}
+
+if (chatClk(owner())){   
+    local Chat = lastSaid():lower():explode(" ")
+
+    if (Chat[1,string]=="-i"){
+        hideChat(1)
+        if (holoCanCreate()){
+            createHolo(Chat[2,string])
+        }
+        else{colorPrint("TOOL","Either hit maximum hologram limit or burst limit","","")}
+    }         
+    elseif (Chat[1,string]=="-inc"){
+        hideChat(1)
+        switch(Mode){
+            case(1),
+                IncMove = Chat[2,string]:toNumber()
+                colorPrint("TOOL","Incremental value for moving changed to:",IncMove:toString(),"")
+                break  
+            case(2),
+                IncScale = Chat[2,string]:toNumber()
+                colorPrint("TOOL","Incremental value for scaling changed to:",IncScale:toString(),"")
+                break  
+            case(3),
+                IncAng = Chat[2,string]:toNumber()
+                colorPrint("TOOL","Incremental value for angling changed to:",IncAng:toString(),"")
+                break  
+        }
+    } 
+    elseif (Chat[1,string]=="-move"){
+        hideChat(1)        
+        if (Chat[2,string]=="reset"){
+            CurIndex:moveHolo(entity():pos())         
+        }
+        elseif (Chat[2,string]!=""){            
+            local XYZ = Chat[2,string]:explode(",")
+            local Pos = vec(XYZ[1,string]:toNumber(),XYZ[2,string]:toNumber(),XYZ[3,string]:toNumber())
+            local LPos = entity():toLocal(Pos)
+            CurIndex:moveHolo(entity():toWorld(Pos))             
+        }          
+    }         
+    elseif (Chat[1,string]=="-scale"){
+        hideChat(1)        
+        if (Chat[2,string]!=""){
+            if (Chat[2,string]=="half"){
+                CurIndex:scaleHolo(-HoloScale[CurHolo,vector]/2,0,0)            
+            }
+            elseif (Chat[2,string]=="double"){
+                CurIndex:scaleHolo(HoloScale[CurHolo,vector],0,0)            
+            }
+            elseif (Chat[2,string]=="reset"){
+                CurIndex:scaleHolo(vec(1),0,1)         
+            }
+            else{
+                local XYZ = Chat[2,string]:explode(",")
+                CurIndex:scaleHolo(vec(XYZ[1,string]:toNumber(),XYZ[2,string]:toNumber(),XYZ[3,string]:toNumber()),1,0)     
+            }
+        }
+    }
+    elseif (Chat[1,string]=="-scalem"){
+        hideChat(1)
+        local XYZ = Chat[2,string]:explode(",")
+        CurIndex:scaleHolo(vec(XYZ[1,string]:toNumber(),XYZ[2,string]:toNumber(),XYZ[3,string]:toNumber()),0,1)         
+    }
+    elseif (Chat[1,string]=="-ang"){
+        hideChat(1)
+        if (Chat[2,string]=="reset"){
+            CurIndex:angleHolo(ang(0,0,0),1,0)            
+        }
+        elseif (Chat[2,string]!=""){
+            local PYR = Chat[2,string]:explode(",")
+            CurIndex:angleHolo(ang(PYR[1,string]:toNumber(),PYR[2,string]:toNumber(),PYR[3,string]:toNumber()),0,1)            
+        }       
+    }
+    elseif (Chat[1,string]=="-model"){
+        hideChat(1)
+        CurIndex:modelHolo(Chat[2,string])                  
+    }
+    elseif (Chat[1,string]=="-color"){
+        hideChat(1)
+        local RGB = Chat[2,string]:explode(",")
+        CurIndex:colorHolo(vec(RGB[1,string]:toNumber(),RGB[2,string]:toNumber(),RGB[3,string]:toNumber()))  
+    }  
+    elseif (Chat[1,string]=="-alpha"){
+        hideChat(1)
+        CurIndex:alphaHolo(Chat[2,string]:toNumber())    
+    }
+    elseif (Chat[1,string]=="-mat"){
+        hideChat(1)
+        CurIndex:materializeHolo(Chat[2,string])
+    }
+    elseif (Chat[1,string]=="-delete"){
+        hideChat(1)
+        CurIndex:deleteHolo(0)
+    } 
+    elseif (Chat[1,string]=="-mirror"){
+        hideChat(1)
+        CurIndex:mirrorHolo(Chat[2,string])
+    } 
+    elseif (Chat[1,string]=="-dupe"){
+        hideChat(1)
+        CurIndex:dupeHolo()
+    }
+    elseif (Chat[1,string]=="-copy"){
+        hideChat(1)
+        if (Chat[2,string]=="mat"){
+            CopyMat = HoloMaterial[CurIndex,string]
+            colorPrint("TOOL","Material:",CopyMat," copied")   
+        }
+        elseif (Chat[2,string]=="color"){
+            CopyColor = HoloColor[CurIndex,vector]  
+            colorPrint("TOOL","Color:",CopyColor:toString()," copied")  
+        }
+        elseif (Chat[2,string]=="model"){
+            CopyModel = HoloModel[CurIndex,string]  
+            colorPrint("TOOL","Model:",CopyModel," copied")  
+        }
+        elseif (Chat[2,string]=="scale"){
+            CopyScale = HoloScale[CurIndex,vector] 
+            colorPrint("TOOL","Scale:",CopyScale:toString()," copied")    
+        }
+        elseif (Chat[2,string]=="pos"){
+            CopyPos = entity():toLocal(holoEntity(CurHolo):pos()) 
+            colorPrint("TOOL","Position:",CopyPos:toString()," copied")  
+        }
+        elseif (Chat[2,string]=="ang"){
+            CopyAng = entity():toLocal(holoEntity(CurHolo):angles())   
+            colorPrint("TOOL","Angle:",CopyAng:toString()," copied")
+        }
+        elseif (Chat[2,string]=="alpha"){
+            CopyAlpha = HoloAlpha[CurIndex,number]
+            colorPrint("TOOL","Alpha:",CopyAlpha:toString()," copied")    
+        }
+    }
+    elseif (Chat[1,string]=="-paste"){
+        hideChat(1)
+        if (Chat[2,string]=="mat"){
+            CurIndex:materializeHolo(CopyMat) 
+            colorPrint("TOOL","Material:",CopyMat," pasted onto Hologram #"+CurHolo)     
+        }
+        elseif (Chat[2,string]=="color"){
+            CurIndex:colorHolo(CopyColor)
+            colorPrint("TOOL","Color:",CopyColor:toString()," pasted onto Hologram #"+CurHolo)   
+        }
+        elseif (Chat[2,string]=="model"){
+            CurIndex:modelHolo(CopyModel)  
+            colorPrint("TOOL","Changed Hologram #"+CurHolo+"'s model to:",CopyModel,"")  
+        }
+        elseif (Chat[2,string]=="scale"){
+            CurIndex:scaleHolo(CopyScale,1,0)    
+            colorPrint("TOOL","Scale:",CopyScale:toString()," pasted onto Hologram #"+CurHolo)
+        }
+        elseif (Chat[2,string]=="pos"){
+            CurIndex:moveHolo(entity():toWorld(CopyPos)) 
+            colorPrint("TOOL","Hologram #"+CurHolo+" moved to copied position:",CopyPos:toString(),"") 
+        }
+        elseif (Chat[2,string]=="ang"){
+            CurIndex:angleHolo(entity():toWorld(CopyAng),0,1) 
+            colorPrint("TOOL","Hologram #"+CurHolo+" angled to copied angle:",CopyAng:toString(),"")  
+        }
+        elseif (Chat[2,string]=="alpha"){
+            CurIndex:alphaHolo(CopyAlpha) 
+            colorPrint("TOOL","Hologram #"+CurHolo+" set alpha to copied alpha:",CopyAlpha:toString(),"")  
+        }
+    }
+    elseif (Chat[1,string]=="-export"){
+        if (Chat[2,string]!=""){
+            Filename = Chat[2,string]
+            hideChat(1)
+            if (Slave:isValid()){
+                createCode()
+            }
+            else{colorPrint("TOOL","You need to spawn the Hologrpahy Modelling Tool Slave E2 first","","")}
+        }
+    }   
+    elseif (Chat[1,string]=="-save"){
+        hideChat(1)
+        if (Index>0){
+            if (ProjectsLoaded){            
+                if (fileCanWrite()){
+                    local Save = 0
+                    if (Chat[2,string] != ""){
+                        Save = 1 
+                        FileName = lastSaid():replace(Chat[1,string],"")
+                        if (!FileName:find(".txt")){
+                            if (FileName:find(".")){
+                                FileName = (FileName:explode(".")[1,string] + ".txt"):sub(2)  
+                            }
+                            else{
+                                FileName = (FileName + ".txt"):sub(2)        
+                            }          
+                        }
+                        else{
+                            FileName = FileName:sub(2)        
+                        }
+                        
+                        FileLoading = ">e2shared/holography_modelling_tool_data/saved/" + FileName                                            
+                    }
+                    else{
+                        if (FileLoading!=""){
+                            Save = 1                               
+                        }
+                        else{
+                            colorPrint("TOOL","The initial save must be followed by the title you want to save the project as.","","")
+                        }    
+                    }
+                    
+                    if (Save){
+                        #Output[1,table] = HoloIndexs to be created (Number)
+                        #Output[2,table] = Position e:toWorld of holos (Vector) 
+                        #Output[3,table] = Angles of holos (Angle)       
+                        #Output[4,table] = Model of holos (String)
+                        #Output[5,table] = Scales of holos (Vector)
+                        #Output[6,table] = Colors of holos (Vector)
+                        #Output[7,table] = Materials of holos (String)
+                        #Output[8,table] = Alphas of holos (Number)  
+                        local Output = table(
+                            Holos,
+                            HoloPos,
+                            HoloAng,
+                            HoloModel,
+                            HoloScale,
+                            HoloColor,
+                            HoloMaterial,
+                            HoloAlpha
+                        )
+                                            
+                        fileWrite(FileLoading,vonEncode(Output))
+                        colorPrint("TOOL","Project saved as:",FileName,"("+FileLoading+")")  
+                        
+                        local Found = 0
+                        for(I=1,Projects:count()){
+                            if (Projects[I,string] == FileName){
+                                Found = 1
+                                break            
+                            }
+                        }
+
+                        if (!Found){
+                            Projects:pushString(FileName)
+                            
+                            if (fileCanWrite()){
+                                fileWrite(ProjectsFile,vonEncode(Projects))   
+                            }
+                            else{
+                                PathToWrite = ProjectsFile
+                                StringToWrite = vonEncode(Projects) 
+                                timer("rewrite",500)   
+                            } 
+                        }                                                       
+                    }
+                }
+                else{
+                    colorPrint("TOOL","Please try saving again in a few seconds...","","")        
+                } 
+            }
+            else{
+                colorPrint("TOOL","Please wait for the projects file to load first...","","")        
+            }
+           
+        }
+        else{
+            colorPrint("TOOL","You must have at least 1 hologram spawned to save a project.","","")    
+        }
+    }          
+    elseif (Chat[1,string]=="-load"){
+        hideChat(1)
+        LoadQuery = 0
+        if (fileCanLoad()){
+            FileName = lastSaid():replace(Chat[1,string],"")
+            if (!FileName:find(".txt")){
+                if (FileName:find(".")){
+                    FileName = (FileName:explode(".")[1,string] + ".txt"):sub(2)  
+                }
+                else{
+                    FileName = (FileName + ".txt"):sub(2)        
+                }          
+            }
+            else{
+                FileName = FileName:sub(2)        
+            }            
+            
+            if (Index==0){
+                FileLoading = ">e2shared/holography_modelling_tool_data/saved/" + FileName
+                fileLoad(FileLoading)
+                colorPrint("TOOL","Searching for design:",FileLoading,"")
+            }
+            else{
+                colorPrint("TOOL","You will loose all unsaved work if you load a new file. Are you sure you want to contiune?","(Yes/No)","")
+                LoadQuery = 1   
+            }       
+        }
+        else{
+            colorPrint("TOOL","Please wait a few seconds before loading another project","","")     
+        }
+    }
+    elseif (Chat[1,string]=="yes"){
+        if (LoadQuery){
+            hideChat(1)
+            LoadQuery = 0
+            DeleteIndex = 0
+            timer("delete",20)    
+        }    
+    }
+    elseif (Chat[1,string]=="no"){
+        if (LoadQuery){
+            hideChat(1)
+            LoadQuery = 0
+            colorPrint("TOOL","Load cancelled. Remember to","-save","the current file before proceeding!")    
+        }        
+    }
+    elseif (Chat[1,string]=="-projects"){
+        hideChat(1)
+        if (ProjectsLoaded){
+            for(I=1,Projects:count()){
+                colorPrint("TOOL","Project ("+I+"):",Projects[I,string],"...")        
+            }
+        }
+        else{
+            colorPrint("TOOL","Please wait until the projects file is loaded and try again.","","")         
+        }           
+    } 
+}
+
+if (fileClk(FileLoading)){
+    if (fileStatus() == 1){      
+        DecodedTable = vonDecodeTable(fileRead())
+        if (DecodedTable[1,table]:exists(1)){
+            colorPrint("TOOL","Project found! Loading holograms...","","")
+            Index = 0
+            SpawnIndex = 0
+            timer("spawn",40) 
+        }
+        else{
+            colorPrint("TOOL","Project contains no holograms. Please try a valid file.","","")        
+        }  
+    }
+    else{
+        colorPrint("TOOL","No design file found with the name:",FileName,"Please enter a correct file name.")        
+    }
+}
+
+elseif (fileClk(ProjectsFile)){    
+    if (fileStatus() == 1){
+        Projects = vonDecodeTable(fileRead())            
+    }
+    else{
+        if (fileCanWrite()){
+            fileWrite(ProjectsFile,vonEncode(table()))   
+        }
+        else{
+            PathToWrite = ProjectsFile
+            StringToWrite = vonEncode(table()) 
+            timer("rewrite",500)   
+        }   
+    }
+    ProjectsLoaded = 1
+    colorPrint("TOOL","Projects file loaded. You have a total of:",Projects:count():toString(),"Project files.")
+    colorPrint("TOOL","Type","-projects","to list them all.")       
+}
+
+if (dsClk("init")){
+    Slave = dsGetSender()
+    colorPrint("TOOL","Slave connected.","","")    
+}
+
+if (clk("spawn")){
+    local CantSpawn = 0
+    if (holoCanCreate() & holoRemainingSpawns()>0){
+        SpawnIndex++ 
+        createHolo(DecodedTable[4,table][SpawnIndex,string])
+        local LVec = DecodedTable[2,table][SpawnIndex,vector]
+        SpawnIndex:moveHolo(entity():toWorld(vec(LVec:x(),LVec:y(),LVec:z())))
+        local LAng = DecodedTable[3,table][SpawnIndex,angle]
+        SpawnIndex:angleHolo(entity():toWorld(ang(LAng:pitch(),LAng:yaw(),LAng:roll())),0,1) 
+        SpawnIndex:scaleHolo(DecodedTable[5,table][SpawnIndex,vector],1,0) 
+        SpawnIndex:colorHolo(DecodedTable[6,table][SpawnIndex,vector])
+        SpawnIndex:materializeHolo(DecodedTable[7,table][SpawnIndex,string])
+        SpawnIndex:alphaHolo(DecodedTable[8,table][SpawnIndex,number])
+    }
+    else{
+        CantSpawn = 1    
+    }
+    
+    if ((SpawnIndex < DecodedTable[1,table]:count()) | CantSpawn){
+        timer("spawn",40)        
+    }
+    elseif ((SpawnIndex >= DecodedTable[1,table]:count())){
+        cycleHolo(1,0)
+        colorPrint("TOOL","Holos finished loading!","","")        
+    }   
+}
+
+elseif (clk("delete")){
+    DeleteIndex++
+    DeleteIndex:deleteHolo(1)
+    print(DeleteIndex)
+    if (DeleteIndex<Index){
+        timer("delete",20)    
+    }
+    else{
+        CurHolo=0
+        CurIndex=0
+        Holos = table()
+        HoloPos = table() 
+        HoloAng = table()
+        HoloScale = table()
+        HoloColor = table()
+        HoloModel = table()
+        HoloMaterial = table()
+        HoloAlpha = table()
+        FileLoading = ">e2shared/holography_modelling_tool_data/saved/" + FileName
+        fileLoad(FileLoading)
+        colorPrint("TOOL","Searching for design:",FileLoading,"")        
+    }    
+}
+
+elseif (clk("reload")){
+    if (fileCanLoad()){
+        fileLoad(ProjectsFile)    
+    }
+    else{
+        timer("reload",100)  
+    }  
+}
+
+elseif (clk("rewrite")){
+    if (fileCanWrite()){
+        fileWrite(PathToWrite,StringToWrite)    
+    }
+    else{
+        timer("rewrite",500)   
+    }        
+}
+
+if (clk("formatcode")){
+    CodeIndex++
+    Code+=
+"    indexHolo(vec("+round(HoloPos[CodeIndex,vector]:x(),3)+","+round(HoloPos[CodeIndex,vector]:y(),3)+","+round(HoloPos[CodeIndex,vector]:z(),3)+"),"+QMark+HoloModel[CodeIndex,string]+QMark+",ang("+round(HoloAng[CodeIndex,angle]:pitch(),3)+","+round(HoloAng[CodeIndex,angle]:yaw(),3)+","+round(HoloAng[CodeIndex,angle]:roll(),3)+"),vec("+round(HoloScale[CodeIndex,vector]:x(),3)+","+round(HoloScale[CodeIndex,vector]:y(),3)+","+round(HoloScale[CodeIndex,vector]:z(),3)+"),vec("+HoloColor[CodeIndex,vector]:x()+","+HoloColor[CodeIndex,vector]:y()+","+HoloColor[CodeIndex,vector]:z()+"),"+QMark+HoloMaterial[CodeIndex,string]+QMark+","+HoloAlpha[CodeIndex,number]+")
+"     
+    local FormatPercentage = (CodeIndex/Holos:count())*100
+    colorPrint("TOOL","Code Creation Progress:",round(FormatPercentage,2)+"%","...")
+    if (CodeIndex>=Holos:count()){
+Code+=
+"
+    timer("+QMark+"spawn"+QMark+",10)
+}
+
+
+if (clk("+QMark+"spawn"+QMark+")){
+    local CantSpawn = 0
+    if (holoCanCreate() & holoRemainingSpawns()>0){
+        SpawnIndex++ 
+        createHolo(SpawnIndex)
+    }
+    else{
+        CantSpawn = 1    
+    }
+    
+    if ((SpawnIndex < Holos:count()) | CantSpawn){
+        timer("+QMark+"spawn"+QMark+",10)        
+    }
+    elseif ((SpawnIndex >= Holos:count())){
+        print("+QMark+"[HMT] Holos finished spawning."+QMark+")
+        #Put your custom functions in here. E.g. Custom parents (holoParent(50,noentity()))      
+    }   
+}
+"        
+    Slave:remoteSetCode(Code)
+    #fileWrite(">e2shared/"+Filename+".txt",Code)
+    colorPrint("TOOL","Code transfer complete, please save the slave E2:",Filename,"")        
+    }
+    else{
+        timer("formatcode",30)    
+    }    
+}
+
+#ifdef runOnHTTP(number)
+    if (chatClk(owner())){
+        if (lastSaid():lower()=="-info"){
+            hideChat(1)
+            callInfo() 
+        }
+        elseif (lastSaid():lower()=="-update"){
+            if (UpdateAllowed){
+                hideChat(1)
+                writeData(OutOfDate[1,string],FileData[2,string])        
+            }    
+        }
+    }
+ 
+    if (clk("re-write")){
+        writeData(PthToWrite,DatToWrite)        
+    }
+    
+    elseif (clk("re-load")){
+        loadFile(LoadFile)        
+    }
+    
+    if (fileClk(LoadFile)){
+        fileData()     
+    }
+
+    if (clk("re-http")){
+        checkFile(CheckFile)        
+    }
+    
+    if (httpClk()){
+        if (httpRequestUrl()==HeaderFile){
+            headerData()            
+        }
+        elseif (httpRequestUrl()==CheckFile){
+            standardData()           
+        }
+    }
+#else
+    colorPrint("AutoUpdater","The HTTP extention is:","Disabled","please get the server owner to enable it to use autoupdate!")
+#endif
+
+if (clk("motd")){
+    colorPrint("TOOL","MOTD:",MOTD,"")
+    timer("motd",40000)    
+}
+

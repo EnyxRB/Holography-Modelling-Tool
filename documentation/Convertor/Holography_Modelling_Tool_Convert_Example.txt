@@ -1,0 +1,47 @@
+@name Holography Modelling Tool Convert Example
+@inputs 
+@outputs 
+@persist 
+@persist Converter:entity #You HAVE to add Converter:entity to persist!
+@trigger 
+
+#This is an example of how your holo code you are looking to convert should look like
+
+if (first()){
+    Converter = dsProbe("hmconvertor")[1,entity]
+    dsSendDirect("init",Converter,getCode())
+    #Inside the if (first()) statement, you just have to copy the lines from the include file
+    #Both these lines above ^^ (Lines 11 and 12) need to be somewhere in the if first()
+    
+    #This is an example of making some holos, just leave your holo creation as is, the chip does it all.
+    holoCreate(1,entity():toWorld(vec(12,0,0)))
+    holoCreate(2,entity():toWorld(vec(-12,0,0)))
+    holoCreate(3,entity():toWorld(vec(0,12,12)))
+    
+    holoModel(1,"models/sprops/rectangles/size_2/rect_12x12x3.mdl")
+    holoModel(2,"models/sprops/rectangles/size_2/rect_12x12x3.mdl")
+    holoModel(3,"models/sprops/rectangles/size_2/rect_12x12x3.mdl")
+    
+    print(holoEntity(1):type())
+}
+
+#COPY THIS ENTIRE IF STATEMENT BELOW TO THE BOTTOM OF YOUR HOLO CODE
+if (dsClk("getholoinfo")){
+    local IndexQuery = holoIndex(dsGetEntity())
+    local Table = table()
+    if (holoEntity(IndexQuery):isValid()){
+        Table = table( #Although it would be more efficient for the server if we didn't get the majority of the data from the dsSends,
+            IndexQuery,
+            entity():toLocal(holoEntity(IndexQuery):pos()), #it makes life a bunch easier for the temporary conversion. I'll rewrite the clientside
+            entity():toLocal(holoEntity(IndexQuery):angles()), #jango as things progress maybe. Currently the server might have to deal with sending a possible
+            holoEntity(IndexQuery):model(), #1000 tables to the client through dsSend, depending on how many holos we are converting...
+            holoScale(IndexQuery)*holoEntity(IndexQuery):boxSize(),
+            holoEntity(IndexQuery):getColor(),
+            holoEntity(IndexQuery):getMaterial(),
+            holoEntity(IndexQuery):getAlpha()  
+        )
+    }
+    dsSendDirect("holodata",Converter,Table)    
+}
+
+
