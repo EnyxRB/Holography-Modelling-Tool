@@ -1,0 +1,10 @@
+@name Holography Modelling Tool Slave
+@inputs 
+@outputs 
+@persist Boss:entity
+@trigger 
+
+if (first() | dupefinished()){
+    Boss = dsProbe("hmtool")[1,entity]
+    dsSendDirect("init",Boss,0)    
+}

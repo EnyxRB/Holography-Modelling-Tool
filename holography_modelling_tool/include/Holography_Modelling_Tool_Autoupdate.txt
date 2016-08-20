@@ -1,0 +1,222 @@
+@name Holography Modelling Tool Autoupdate
+@persist [HeaderFile CheckFile LoadFile MOTD]:string [UpdateTable FileNames FileData ReadQueue OutOfDate Missing]:table CurrentLoad
+@persist UpdateAllowed [PthToWrite DatToWrite]:string Updated
+
+if (first()){
+    #include "e2shared/holography_modelling_tool/include/Holography_Modelling_Tool_SharedFuncs"
+    #ifdef runOnHTTP(number)        
+        runOnHTTP(1)
+        runOnChat(1)
+        runOnFile(1)
+        
+        HeaderFile = "https://raw.githubusercontent.com/EnyxRB/Holography-Modelling-Tool/master/UpdateFormat"
+        
+        function string reformatFilename(Name:string){
+            local EndPath = Name:explode("EnyxRB")[2,string]
+            local ReplaceDash = EndPath:replace("-","_")
+            local MasterMove = (">e2shared" + ReplaceDash):explode("/master")
+            local FinalString = MasterMove[1,string]+MasterMove[2,string]
+            return FinalString
+        }
+        
+        function void fileCompare(Current:string, New:string){
+            if (Current != New){
+                OutOfDate:pushString(LoadFile)
+            }        
+        }
+        
+        function void loadFile(Path:string){
+            LoadFile = Path
+            if (fileCanLoad()){                
+                fileLoad(LoadFile)  
+            }
+            else{                
+                timer("re-load",100)    
+            }     
+        }
+          
+        function void checkFile(Path:string){
+            if (httpCanRequest()){
+                local LPath = Path:replace("https://raw.githubusercontent.com/EnyxRB/","")
+                colorPrint("AutoUpdater","Checking file:",LPath,"...") 
+                httpRequest(Path)               
+            }
+            else{
+                CheckFile = Path
+                timer("re-http",100)    
+            }
+        }
+        
+        function void headerData(){
+            local Dat = httpData()    
+            FileData:pushString(httpData())
+            #Begin Manual Decoding due to VonDecodeTable not being able to read due to spaces in http.
+            local MOTDFind = Dat:explode("1:")[2,string]
+            MOTD = MOTDFind:explode("}")[1,string]
+            UpdateTable[1,string] = MOTD
+            
+            local FilesStart = Dat:explode("2:")[2,string]
+            local FileString = FilesStart:explode("}")[1,string]
+            local Files = FileString:explode(",")
+            for(I=1,Files:count()){
+                UpdateTable[2,table]:pushString(Files[I,string])
+                FileNames:pushString(Files[I,string])           
+            }
+                     
+            if (!UpdateTable[2,table]:exists(1)){
+                colorPrint("AutoUpdater","Couldn't retrieve update format data. Please update to the newest github version manually.","","")  
+                colorPrint("AutoUpdater","Github:","https://github.com/EnyxRB/Holography-Modelling-Tool","")  
+            }
+            else{
+                UpdateTable[2,table]:removeString(1)
+                MOTD = UpdateTable[1,string]
+                                                                    
+                if (UpdateTable[2,table]:count()>0){             
+                    checkFile(UpdateTable[2,table][1,string])         
+                }        
+            }            
+        }
+        
+        function void standardData(){
+            FileData:pushString(httpData())
+            ReadQueue:pushString(reformatFilename(UpdateTable[2,table][1,string]))
+            UpdateTable[2,table]:removeString(1)
+                        
+            if (ReadQueue:count()==1){
+                loadFile(ReadQueue[1,string])    
+            }
+            
+            if (UpdateTable[2,table]:count()>0){
+                checkFile(UpdateTable[2,table][1,string])        
+            }            
+        }
+        
+        function void writeData(Path:string,Data:string){
+            PthToWrite = Path
+            DatToWrite = Data
+            if (fileCanWrite()){
+                Updated++
+                fileWrite(Path,Data)
+                colorPrint("Autoupdate","Updated:",Path,"")
+                OutOfDate:removeString(1)
+                FileData:removeString(2)
+                if (OutOfDate:count()>0){ 
+                    writeData(OutOfDate[1,string],FileData[2,string])                    
+                }
+                else{
+                    colorPrint("Autoupdate","Finished updating! Please close the currently open HMT files and open the updated ones located in:","e2shared/holography_modelling_tool","")        
+                } 
+                  
+            }
+            else{
+                timer("re-write",100)    
+            }
+        }
+        
+        function void fileData(){
+            CurrentLoad++
+            if (fileStatus() == 1){                
+                fileCompare(fileRead(),FileData[CurrentLoad,string])                      
+            }
+            else{
+                Missing:pushString(LoadFile)
+                OutOfDate:pushString(LoadFile)       
+            }
+                        
+            if (CurrentLoad<(FileNames:count()-1)){
+                ReadQueue:removeString(1)
+                loadFile(ReadQueue[1,string])        
+            }
+            else{
+                if (Missing:count()==(FileData:count()-1)){
+                    UpdateAllowed = 1
+                    colorPrint("Autoupdate","None of the required files are in the right place for Autoupdate to work! You can type","-update","to make a fresh new version in the e2shared folder.")                       
+                }
+                elseif (OutOfDate:count()>0){
+                    printColor(vec(0,255,0),"[HMT Autoupdate]",vec(0,175,0),"["+Version+"] ",vec(255)," Your current version of HMT is",vec(225,0,0)," OUT OF DATE.",vec(255)," Please type ",vec(0,161,255),"-update ",vec(255),"to update! ",vec(255),"Typing ",vec(0,161,255),"-info",vec(255)," will tell you what files need to update.")                                               
+                    UpdateAllowed = 1
+                }
+                else{
+                    printColor(vec(0,255,0),"[HMT Autoupdate]",vec(0,175,0),"["+Version+"] ",vec(255)," Your current version of HMT is",vec(0,161,255)," Up to date.")                                                         
+                }   
+            }
+        }
+        
+        function void callInfo(){
+            if (UpdateAllowed){
+                local OutOfDateCopy = OutOfDate:clone()
+                for(I=1,OutOfDateCopy:count()){
+                    for(J=1,Missing:count()){
+                        if (OutOfDateCopy[I,string] == Missing[J,string]){
+                            OutOfDateCopy:removeString(I)        
+                        }   
+                    }    
+                }
+                for(I=1,OutOfDateCopy:count()){
+                    colorPrint("AutoUpdater","Found, Out of date:",OutOfDateCopy[I,string],"")    
+                }  
+                for(I=1,Missing:count()){
+                    colorPrint("AutoUpdater","Missing:",Missing[I,string],"")             
+                }            
+            }    
+        }
+        
+        checkFile(HeaderFile)
+        
+        UpdateTable[2,table] = table()
+        FileNames:pushString(HeaderFile)
+        CurrentLoad = 1
+    #else
+        colorPrint("AutoUpdater","AutoUpdated cannot run due to the E2 extension:","HTTP","not being available...")
+    #endif
+}
+
+
+#IMPLEMENTATION FOR AUTOUPDATING
+#[
+if (first()){
+    #include "e2shared/holography_modelling_tool/include/Holography_Modelling_Tool_Autoupdate"    
+}
+
+#ifdef runOnHTTP(number)
+    if (chatClk(owner())){
+        if (lastSaid():lower()=="-info"){
+            hideChat(1)
+            callInfo() 
+        }
+        elseif (lastSaid():lower()=="-update"){
+            if (UpdateAllowed){
+                hideChat(1)
+                writeData(OutOfDate[1,string],FileData[2,string])        
+            }    
+        }
+    }
+ 
+    if (clk("re-write")){
+        writeData(PthToWrite,DatToWrite)        
+    }
+    
+    elseif (clk("re-load")){
+        loadFile(LoadFile)        
+    }
+    
+    if (fileClk(LoadFile)){
+        fileData()     
+    }
+
+    if (clk("re-http")){
+        checkFile(CheckFile)        
+    }
+    
+    if (httpClk()){
+        if (httpRequestUrl()==HeaderFile){
+            headerData()            
+        }
+        elseif (httpRequestUrl()==CheckFile){
+            standardData()           
+        }
+    }
+#else
+    colorPrint("AutoUpdater","The HTTP extention is:","Disabled","please get the server owner to enable it to use autoupdate!")
+#endif
+]#

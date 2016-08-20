@@ -1,0 +1,42 @@
+@name Holography Modelling Tool Include
+@inputs 
+@outputs 
+@persist 
+@persist Converter:entity #You HAVE to add Converter:entity to persist of your holo e2 code
+@trigger 
+
+#[Conversion Guide..
+1. Add Converter:entity to the persist line in the hologram code you are looking to convert.
+2. Copy the lines 20 and 21 into the code you are looking to convert.
+3. Copy lines 25 to 41 into the bottom of the code you are looking to convert. Make sure it's pasted OUTSIDE of the if first() statement.
+4. Write your OutputFileName in the Holography Modelling Tool Convertor to whatever you want your converted file to be called and spawn the E2 itself.
+5. Spawn the holo E2 to convert with the added lines.
+6. Type -convert to begin the conversion process.
+7. When the process is 100% finished, the new file can be loaded in the Holography Modelling Tool by typing -load Followed by the output filename you chose.
+]#
+
+if (first()){
+
+    Converter = dsProbe("hmconvertor")[1,entity]
+    dsSendDirect("init",Converter,getCode())
+        
+}
+
+if (dsClk("getholoinfo")){
+    local IndexQuery = holoIndex(dsGetEntity())
+    local Table = table()
+    if (holoEntity(IndexQuery):isValid()){
+        Table = table( #Although it would be more efficient for the server if we didn't get the majority of the data from the dsSends,
+            IndexQuery,
+            entity():toLocal(holoEntity(IndexQuery):pos()), #it makes life a bunch easier for the temporary conversion. I'll rewrite the clientside
+            entity():toLocal(holoEntity(IndexQuery):angles()), #jango as things progress. Currently the server might have to deal with sending a possible
+            holoEntity(IndexQuery):model(), #1000 tables to the client through dsSend, depending on how many holos we are converting...
+            holoScale(IndexQuery)*holoEntity(IndexQuery):boxSize(),
+            holoEntity(IndexQuery):getColor(),
+            holoEntity(IndexQuery):getMaterial(),
+            holoEntity(IndexQuery):getAlpha()  
+        )
+    }
+    dsSendDirect("holodata",Converter,Table)    
+}
+
