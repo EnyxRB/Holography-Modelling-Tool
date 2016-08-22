@@ -3,7 +3,8 @@ My tool designed for creation, manipulation and exporting of holograms in Expres
 
 What does it do?:
   - HOLOGRAPHY is the science and practice of making holograms
-  - This tool enables a more practical way of creating and modelling detailed hologram models in Expression2. Meaning you don't have to edit that same line of code over and over just to get the damn thing in the right position. I've been there before. Even for the experienced holo modelers, this makes the entire process massively quicker... once you know the commands...
+  - This tool is essentially a live 3D editor for creating and manipulating holograms. You can create/save/load projects and export them to format and create the code required to spawn your creation as normal hologram code.
+  - It enables a more practical way of creating and modelling detailed hologram models in Expression2. Meaning you don't have to edit that same line of code over and over just to get the damn thing in the right position. I've been there before. Even for the experienced holo modelers, this makes the entire process massively quicker... once you know the commands...
 
 Installation instructions:
   
