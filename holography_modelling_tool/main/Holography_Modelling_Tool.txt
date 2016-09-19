@@ -3,7 +3,7 @@
 @persist IncAng Mode LastHolo  CurIndex LastIndex Slave:entity [QMark Code Filename CopyMat CopyModel]:string MirrorIndex
 @persist [CopyColor CopyScale CopyPos]:vector CopyAng:angle CopyAlpha [FileLoading FileName]:string
 @persist [DecodedTable Projects]:table SpawnIndex LoadQuery DeleteIndex [ProjectsFile PathToWrite StringToWrite]:string
-@persist ProjectsLoaded CodeIndex
+@persist ProjectsLoaded CodeIndex CheckIndex [IntersectIndexs IntersectDists]:array [ShootPos Eye]:vector
 
 "--------------------------------------------AUTHOR--------------------------------------------------"
 "#############################################################################################"
@@ -68,6 +68,7 @@
 #   numpad6 = move holo right/yaw holo right
 #   numpad- = move holo up/roll holo left
 #   numpad+ = move holo down/roll holo right
+#   E       = searches for and selects the hologram you are currently looking at
 #   numpad/ = cycles to the previous hologram in the program
 #   numpad* = cycles to the next hologram in the program
 #--------------------------------------------------------------------------#
@@ -154,6 +155,9 @@ if (first() | dupefinished()){
 #(new) Added procedural code creation so number of holos to export is not limited by the tick quota.
 #(change) Removed inc ang and overloaded variable inc to change incremental of currently selected mode.
 #(new) Added exception to -i cube so players can create standard model through both -i and -i cube.
+#(new) Added incremental reminder to print when switching modes.
+#(new) Added a super easy hologram selection raytrace method to find the hologram you are looking at using the use key.
+#This method is done using premade raytracing functions, therefore can only be used by clients with the ray tracing extension activated.
 #---------------------------------------------------------------------------#
 
 if (first() | dupefinished()){    
@@ -474,6 +478,21 @@ if (first() | dupefinished()){
         else{colorPrint("TOOL","Either hit maximum hologram limit or burst limit","","")}     
     }
     
+    #ifdef rayOBBoxIntersection(vector,vector,vector,vector,angle)
+    function vector holoIntersect(Index:number){
+        local TargetBox = holoEntity(Index)
+        if (TargetBox:isValid()){
+            local Mult = holoScale(holoIndex(TargetBox))       
+            local BoxSize = TargetBox:boxSize()*Mult
+            local Hit = rayOBBoxIntersection(ShootPos,Eye,TargetBox:pos(),BoxSize,TargetBox:angles())
+            return Hit    
+        }
+        else{
+            return vec(0) 
+        }      
+    }
+    #endif
+        
     IncMove = 6 
     IncScale = 6
     IncAng = 45
@@ -503,19 +522,32 @@ if (keyClk(owner())){
     }
     elseif (owner():keyPressed("pad_1")){
         Mode = 1
-        colorPrint("TOOL","Current mode set to:","Move","")            
+        colorPrint("TOOL","Current mode set to:","Move","with increment of "+IncMove)            
     }
     elseif (owner():keyPressed("pad_2")){
         Mode = 2
-        colorPrint("TOOL","Current mode set to:","Scale","")        
+        colorPrint("TOOL","Current mode set to:","Scale","with increment of "+IncScale)        
     }
     elseif (owner():keyPressed("pad_3")){
         Mode = 3
-        colorPrint("TOOL","Current mode set to:","Angle","")        
+        colorPrint("TOOL","Current mode set to:","Angle","with increment of "+IncAng)        
     }
     elseif (owner():keyPressed("pad_multiply")|owner():keyPressed("pad_divide")){
         cycleHolo(owner():keyPressed("pad_multiply"),owner():keyPressed("pad_divide"))        
+    }
+    #ifdef rayOBBoxIntersection(vector,vector,vector,vector,angle)
+    elseif (owner():keyPressed("e")){
+        if (Holos:count()>0){
+            colorPrint("TOOL","Searching for Hologram...","","")
+            IntersectDists = array()
+            IntersectIndexs = array() 
+            CheckIndex = 0
+            ShootPos = owner():shootPos()
+            Eye = owner():eye()
+            timer("checkHolo",10) 
+        }       
     }    
+    #endif
 }
 
 if (chatClk(owner())){   
@@ -1039,3 +1071,35 @@ if (clk("motd")){
     colorPrint("TOOL","MOTD:",MOTD,"")
     timer("motd",40000)    
 }
+
+#ifdef rayOBBoxIntersection(vector,vector,vector,vector,angle)
+if (clk("checkHolo")){
+    for(I=1,5){
+        if (CheckIndex<Holos:count()){
+            CheckIndex++
+            local Intersect = holoIntersect(holoID(CheckIndex))
+            if (Intersect!=vec(0)){
+                IntersectIndexs:pushNumber(CheckIndex)
+                IntersectDists:pushNumber((Intersect-owner():pos()):length())                    
+            }      
+        }
+        else{
+            break    
+        }    
+    }
+    if (CheckIndex<Holos:count()){
+        timer("checkHolo",10)    
+    }
+    else{
+        if (IntersectDists:count()>0){
+            local Closest = IntersectDists:minIndex()
+            local ClosestIndex = IntersectIndexs[Closest,number]
+            CurIndex = ClosestIndex
+            CurHolo = holoID(CurIndex)
+            setHoloCol()
+            LastHolo = CurHolo
+            LastIndex = CurIndex  
+        }          
+    }       
+}
+#endif
