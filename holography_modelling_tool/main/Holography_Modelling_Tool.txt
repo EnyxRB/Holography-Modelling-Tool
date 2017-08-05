@@ -3,7 +3,7 @@
 @persist IncAng Mode LastHolo  CurIndex LastIndex Slave:entity [QMark Code Filename CopyMat CopyModel]:string MirrorIndex
 @persist [CopyColor CopyScale CopyPos]:vector CopyAng:angle CopyAlpha [FileLoading FileName]:string
 @persist [DecodedTable Projects]:table SpawnIndex LoadQuery DeleteIndex [ProjectsFile PathToWrite StringToWrite]:string
-@persist ProjectsLoaded CodeIndex CheckIndex [IntersectIndexs IntersectDists]:array [ShootPos Eye]:vector
+@persist ProjectsLoaded CodeIndex CheckIndex [IntersectIndexs IntersectDists]:array [ShootPos Eye]:vector 
 
 "--------------------------------------------AUTHOR--------------------------------------------------"
 "#############################################################################################"
@@ -160,6 +160,7 @@ if (first() | dupefinished()){
 #This method is done using premade raytracing functions, therefore can only be used by clients with the ray tracing extension activated.
 #(delete) Removed random print.
 #(fix) Fixed deleting all holograms printing deleting hologram 0. Actual indicies are now given.
+#(fix) Fixed copy model not resetting scale of pasted model
 #---------------------------------------------------------------------------#
 
 if (first() | dupefinished()){    
@@ -664,6 +665,7 @@ if (chatClk(owner())){
             colorPrint("TOOL","Color:",CopyColor:toString()," copied")  
         }
         elseif (Chat[2,string]=="model"){
+            CopyModelScale = HoloScale[CurIndex,vector] 
             CopyModel = HoloModel[CurIndex,string]  
             colorPrint("TOOL","Model:",CopyModel," copied")  
         }
@@ -694,8 +696,9 @@ if (chatClk(owner())){
             CurIndex:colorHolo(CopyColor)
             colorPrint("TOOL","Color:",CopyColor:toString()," pasted onto Hologram #"+CurHolo)   
         }
-        elseif (Chat[2,string]=="model"){
+        elseif (Chat[2,string]=="model"){            
             CurIndex:modelHolo(CopyModel)  
+            CurIndex:scaleHolo(vec(1),0,1)
             colorPrint("TOOL","Changed Hologram #"+CurHolo+"'s model to:",CopyModel,"")  
         }
         elseif (Chat[2,string]=="scale"){
