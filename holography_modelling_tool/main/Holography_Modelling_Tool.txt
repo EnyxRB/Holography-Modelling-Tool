@@ -158,6 +158,8 @@ if (first() | dupefinished()){
 #(new) Added incremental reminder to print when switching modes.
 #(new) Added a super easy hologram selection raytrace method to find the hologram you are looking at using the use key.
 #This method is done using premade raytracing functions, therefore can only be used by clients with the ray tracing extension activated.
+#(delete) Removed random print.
+#(fix) Fixed deleting all holograms printing deleting hologram 0. Actual indicies are now given.
 #---------------------------------------------------------------------------#
 
 if (first() | dupefinished()){    
@@ -271,8 +273,8 @@ if (first() | dupefinished()){
     }
 
     function void number:deleteHolo(Wipe:number){        
-        holoDelete(holoID(This))
         colorPrint("TOOL","Delted Hologram #",holoID(This):toString(),"")
+        holoDelete(holoID(This))        
         if (!Wipe){
             Holos:removeNumber(This) 
             HoloPos:removeVector(This)  
@@ -390,7 +392,7 @@ if (first() | dupefinished()){
         holoParent(Index,entity())
         holoColor(Index,vec(255,0,191))
         holoModel(Index,Model)         
-        if (Model!="" & Model!="cube"){
+        if (Model!="" & Model!="cube"){ 
             if (holoEntity(Index):model()==("models/holograms/cube.mdl")){
                 colorPrint("TOOL","No model found for this hologram, try again...","","")
                 holoDelete(Index)    
@@ -944,7 +946,6 @@ if (clk("spawn")){
 elseif (clk("delete")){
     DeleteIndex++
     DeleteIndex:deleteHolo(1)
-    print(DeleteIndex)
     if (DeleteIndex<Index){
         timer("delete",20)    
     }
