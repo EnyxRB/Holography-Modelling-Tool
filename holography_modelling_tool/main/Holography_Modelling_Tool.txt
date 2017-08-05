@@ -160,7 +160,8 @@ if (first() | dupefinished()){
 #This method is done using premade raytracing functions, therefore can only be used by clients with the ray tracing extension activated.
 #(delete) Removed random print.
 #(fix) Fixed deleting all holograms printing deleting hologram 0. Actual indicies are now given.
-#(fix) Fixed copy model not resetting scale of pasted model
+#(fix) Fixed copy model not resetting scale of pasted model.
+#(fix) StartIndex on holo export now works as expected.
 #---------------------------------------------------------------------------#
 
 if (first() | dupefinished()){    
@@ -343,12 +344,12 @@ if (first() | dupefinished()){
     function void createCode(){
 Code = 
 "@name "+Filename+"
-@persist SpawnIndex Index Holos:table Scale GeneralParent:entity
+@persist StartIndex SpawnIndex Index Holos:table Scale GeneralParent:entity
 
 if (first() | dupefinished()){
     
     #CUSTOM PROPERTIES#
-    SpawnIndex = 0 #Which number do you want the indexing to start at?
+    StartIndex = 0 #Which number do you want the indexing to start at?
     GeneralParent = entity() #The parent all holograms will be parented to. This can be overriden with normal holoParent.
     Scale = 1 #What scale do you want the model to build to?
     
@@ -366,6 +367,7 @@ if (first() | dupefinished()){
     
     function void createHolo(Ind:number){
         local Cur = Holos[Ind,table]
+        Ind+=StartIndex
         holoCreate(Ind)
         holoCreate(Ind)
         holoCreate(Ind)
