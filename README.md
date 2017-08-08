@@ -1,6 +1,10 @@
 # Holography-Modelling-Tool
 My tool designed for creation, manipulation and exporting of holograms in Expression2 (Art of Holography)
 
+**Watch the Video Guide Here:**
+
+[![Video Guide](https://img.youtube.com/vi/192Mks1dbeM/0.jpg)](https://www.youtube.com/watch?v=192Mks1dbeM)
+
 ## What does it do?:
   - HOLOGRAPHY is the science and practice of making holograms
   - This tool is essentially a live 3D editor for creating and manipulating holograms. You can create/save/load projects and export them to format and create the code required to spawn your creation as normal hologram code.
