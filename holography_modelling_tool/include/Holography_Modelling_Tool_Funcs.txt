@@ -1,0 +1,455 @@
+@name Holography Modelling Tool Funcs
+@persist [Holos HoloPos HoloScale HoloColor HoloModel HoloAng HoloAlpha HoloMaterial]:table
+@persist CurIndex LastIndex LastHolo Index Filename:string [ShootPos Eye]:vector
+
+#TODO: code compression (procedural function and timer setting),rotation around a point (new) common materials list to search keywords e.g. -mat 1.
+#keys revamp, GUI with plane interception and buttons, colour mixer and material show.
+
+#---------------------------------CHANGELOG---------------------------------#
+#--------------------------------VERSION 1.1--------------------------------#
+#(new) Added seperate incremental for angling so angling inc can start at 90.
+#(new) New command -inc ang number to change the incremental of angling.
+#(new) Added name update on creating and deleting holos, to show user the number of holos active.
+#(fix) On deleting holos until last holo remains, bug whereby last hologram couldn't be selected.
+#(new) Switches to angling mode upon using -inc ang command, aswell as setting the ang inc.
+#(new) Added mirror function -mirror direction (forward/right/up) allowing to mirror holograms across planes.
+#(change) Changed control layout to make moving/scaling/angling holograms more simple.
+#--------------------------------VERSION 1.2--------------------------------#
+#(new) Added dupe function -dupe which creates a replica of the current hologram in the same position.
+#(new) Added copy and paste functions for all holo properties. Alowing to copy a property from one holo and place on another.
+#(change) Changed standard prints to el super fancio colorPrint to make this project seem like it's actually important.
+#(new) -model string function to set the model after creation, might be helpful if you make a mistake.
+#(new) -scale x,y,z function for custom scaling by unit amounts. Same as holoScaleUnits().
+#(new) -scalem x,y,z function for custom scaling by multiple amounts. Same as holoScale().
+#(change) Changed around layout of scaleHolo function to allow multiplier scaling as well as unit scaling.
+#(new) Added version control compatibility, checks current version against online updated version.
+#(new) Added -update command for users with out of date / modified versions of the software, this whole version control thing is just for fun.
+#--------------------------------VERSION 1.3--------------------------------#
+#(change) Changed method of roation to rotateAroundAxis method, allowing for easier and more memerable rotations.
+#(new) Added update telling user new inc value for ang, scaling and moving holos.
+#(change) Github auto update URL changed to new folder arrangement.
+#(change) Updated the auto update response print.
+#(new) Added parenting holos to entity on spawn.
+#(fix) Fixed mirror function to be more accurate and mathematically correct.
+#(change) Changed colorPrint functions as well as all printColors with version having a darker green tag.
+#(change) Rebranded from Simple Holo Model Creator to Holography Modelling Tool because, it's not that simple anymore... ;o
+#(new) Added a what is dis section for people finding the source from ports other than wiremod.
+#(new) Added author information so people can send me feedback.
+#--------------------------------VERSION 1.4--------------------------------#
+#(new) Added Holography Modelling Tool Convertor file to project.
+#(new) Added Holography Modelling Tool Include file to project.
+#(new) Added Holography Modelling Tool Convert Example file to project.
+#(new) Tool now supports loading and saving of projects, to be able to re-edit at any time.
+#(new) Added command -load filename to load projects of the correct format to the tool.
+#(new) Added command -save filename to save current project to the correct format for the tool to be able to load.
+#(new) Procedural spawn for holograms when loading designs to the software.
+#(change) Changed -finish to -export.
+#(change) Optimized cycleHolo function.
+#(new) Loopback for cycleHolo added.
+#(new) Added cycling for current holos so you can keep iterating through the choices.
+#(new) Added procedural delete to use for loading over an already loaded project.
+#(new) Added -projects command that gives a list of all the projects in the system.
+#(fix) Fixed spawn error when loading the same project file that was currently open by adding wipe parameter to delete function.
+#(new) Added holo delete print on deleting a holo
+#(change) Changed from json to von for encoding/decoding project tables/files, so that nexuscore isn't required to run.
+#(new) Completely reworked and improved autoupdate feature so user should never again have to redownload the newest version from github, new files can be auto obtained.
+#(new) New auto update checker which checks every file in the github repository selected to be included in the package by me.
+#--------------------------------VERSION 1.5--------------------------------#
+#(new) Added procedural spawning for exported holo code to ensure all holograms are spawned without fail.
+#(change) Moved required position of root folder to >e2shared as this is required for file write and read.
+#(new) Shared functions file, holding local version to be used universally by other members.
+#(change) Numpad keys 1,2 and 3 are now used to change modes, therefore I've removed chat commands to switch modes.
+#(new) Added procedural code creation so number of holos to export is not limited by the tick quota.
+#(change) Removed inc ang and overloaded variable inc to change incremental of currently selected mode.
+#(new) Added exception to -i cube so players can create standard model through both -i and -i cube.
+#(new) Added incremental reminder to print when switching modes.
+#(new) Added a super easy hologram selection raytrace method to find the hologram you are looking at using the use key.
+#This method is done using premade raytracing functions, therefore can only be used by clients with the ray tracing extension activated.
+#(delete) Removed random print.
+#(fix) Fixed deleting all holograms printing deleting hologram 0. Actual indicies are now given.
+#(fix) Fixed copy model not resetting scale of pasted model.
+#(fix) StartIndex on holo export now works as expected.
+#(new) Added debug print if certain function isn't available on current server.
+#--------------------------------VERSION 1.6--------------------------------#
+#(new) Added PA style point to point movement for holos.
+#(change) Moved the main functions to an external file.
+#---------------------------------------------------------------------------#
+
+if (first()){
+    #include "e2shared/holography_modelling_tool/include/Holography_Modelling_Tool_SharedFuncs"
+        
+    function number holoID(Index:number){
+        return Holos[Index,number]    
+    }
+
+    function void number:indexHolo(Model:string){
+        Holos:pushNumber(This)
+        setName("Holography Modelling Tool ("+Version+") - "+Holos:count()+" Holograms") 
+        CurIndex = Holos:count()
+        CurHolo = Holos[Holos:count(),number]
+        HoloColor[CurIndex,vector] = vec(255)
+        HoloAlpha[CurIndex,number] = 255
+        HoloModel[CurIndex,string]=Model        
+        if (Holos:exists(LastIndex)){
+            holoColor(LastHolo,HoloColor[LastIndex,vector])
+        }
+        HoloScale[CurIndex,vector] = holoEntity(CurHolo):boxSize()
+        holoScaleUnits(CurHolo,HoloScale[CurIndex,vector])
+        LastHolo = CurHolo
+        LastIndex = CurIndex        
+    }
+    
+    function void createHolo(Model:string){
+        Index++
+        holoCreate(Index)
+        holoCreate(Index)
+        holoCreate(Index)
+        holoParent(Index,entity())
+        holoColor(Index,vec(255,0,191))
+        holoModel(Index,Model)         
+        if (Model!="" & Model!="cube"){ 
+            if (holoEntity(Index):model()==("models/holograms/cube.mdl")){
+                colorPrint("TOOL","No model found for this hologram, try again...","","")
+                holoDelete(Index)    
+            }
+            else{
+                Index:indexHolo(Model)
+                colorPrint("TOOL","Hologram #",Holos:count():toString(),"created sucessfully")
+            }
+        }
+        else{
+            Index:indexHolo(Model)
+            colorPrint("TOOL","Hologram #",Holos:count():toString(),"created sucessfully")
+        }
+    }
+        
+    function void number:moveHolo(Vector:vector){
+        holoPos(holoID(This),Vector)
+        HoloPos[This,vector]=entity():toLocal(Vector)
+        colorPrint("TOOL","Offset:",round(Vector-entity():pos(),3):toString(),"")       
+    }  
+    
+    function void number:scaleHolo(Vector:vector,Mirror:number,Multiple:number){
+        if (Mirror){
+            HoloScale[This,vector]=Vector
+            holoScaleUnits(holoID(This),HoloScale[This,vector])
+            colorPrint("TOOL","ScaleUnits:",round(HoloScale[This,vector],3):toString(),"")        
+        }
+        elseif (Multiple){
+            HoloScale[This,vector] = holoEntity(Holos[This,number]):boxSize()*Vector
+            holoScaleUnits(holoID(This),HoloScale[This,vector])
+            colorPrint("TOOL","ScaleMultiple:",round(Vector,3):toString(),"") 
+        }
+        else{
+            HoloScale[This,vector]=HoloScale[This,vector]+Vector 
+            holoScaleUnits(holoID(This),HoloScale[This,vector])   
+            colorPrint("TOOL","ScaleUnits:",round(HoloScale[This,vector],3):toString(),"")          
+        }                
+    }
+    
+    function void number:colorHolo(Vector:vector){
+        HoloColor[This,vector]=Vector
+        holoColor(holoID(This),Vector)         
+    } 
+    
+    function void number:modelHolo(String:string){
+        HoloModel[This,string]=String
+        holoModel(holoID(This),String)         
+    } 
+    
+    function void number:angleHolo(Angle:angle,Reset:number,Mirror:number){
+        local Ang = ang(0,0,0)
+        if (!Reset){
+            if (Mirror){
+                Ang = Angle        
+            }
+            else{
+                local Angles = holoEntity(holoID(This)):angles()  
+                #print(holoEntity(holoID(This)):right():normalized())
+                Angles = Angles:rotateAroundAxis(vec(0,1,0),Angle:pitch())
+                Angles = Angles:rotateAroundAxis(vec(0,0,1),Angle:yaw())
+                Angles = Angles:rotateAroundAxis(vec(1,0,0),Angle:roll())  
+                Ang = Angles 
+            }
+        }
+        colorPrint("TOOL","Angle:",round(Ang,3):toString(),"")
+        HoloAng[This,angle]=entity():toLocal(Ang)
+        holoAng(holoID(This),Ang)    
+    } 
+    
+    function void number:alphaHolo(Alpha:number){
+        HoloAlpha[This,number]=Alpha
+        holoAlpha(holoID(This),Alpha)    
+    }
+    
+    function void number:materializeHolo(String:string){
+        HoloMaterial[This,string]=String
+        holoMaterial(holoID(This),String)   
+    }
+    
+    function void number:deleteHolo(Wipe:number){        
+        colorPrint("TOOL","Delted Hologram #",holoID(This):toString(),"")
+        holoDelete(holoID(This))        
+        if (!Wipe){
+            Holos:removeNumber(This) 
+            HoloPos:removeVector(This)  
+            HoloAng:removeAngle(This)
+            HoloScale:removeVector(This)
+            HoloColor:removeVector(This) 
+            HoloModel:removeString(This)
+            HoloMaterial:removeString(This)
+            HoloAlpha:removeNumber(This)
+            setName("Simple Holo Model Creator ("+Version+") - "+Holos:count()+" Holograms")
+    
+            if (CurIndex>1){
+                CurIndex-=1           
+            }
+            elseif (holoID(This)<Holos:count()){
+                CurIndex+=1         
+            }
+            else{
+                CurIndex=1        
+            }
+            CurHolo = Holos[CurIndex,number]
+            LastHolo=CurHolo   
+            LastIndex = CurIndex        
+            holoColor(CurHolo,vec(255,0,191))
+        }        
+    }
+    
+    function void setHoloCol(){
+        colorPrint("TOOL","Changing to edit Hologram #",CurHolo:toString(),"") 
+        if (Holos:exists(LastIndex)){
+            holoColor(LastHolo,HoloColor[LastIndex,vector])
+        }
+        holoColor(CurHolo,vec(255,0,191))
+        LastHolo = CurHolo
+        LastIndex = CurIndex          
+    }
+    
+    function void cycleHolo(Up:number,Down:number){       
+        if (Up){
+            if ((CurHolo)<Holos:max()){  
+                CurIndex+=1 
+            }
+            else{
+                CurIndex=1        
+            }
+
+        }
+        elseif (Down){
+            if ((CurHolo)>Holos:min()){
+                CurIndex-=1
+            }
+            else{
+                CurIndex=Holos:maxIndex()    
+            }
+        }
+    
+        CurHolo = Holos[CurIndex,number]
+        setHoloCol()
+        LastHolo = CurHolo
+        LastIndex = CurIndex                
+    }
+     
+    function void createCode(){
+Code = 
+"@name "+Filename+"
+@persist StartIndex SpawnIndex Index Holos:table Scale GeneralParent:entity
+
+if (first() | dupefinished()){
+    
+    #CUSTOM PROPERTIES#
+    StartIndex = 0 #Which number do you want the indexing to start at?
+    GeneralParent = entity() #The parent all holograms will be parented to. This can be overriden with normal holoParent.
+    Scale = 1 #What scale do you want the model to build to?
+    
+    function void indexHolo(LPos:vector,Model:string,LAng:angle,Scale:vector,Color:vector,Material:string,Alpha:number){
+        Index++
+        Holos[Index,table] = table() 
+        Holos[Index,table][1,vector] = LPos
+        Holos[Index,table][2,string] = Model   
+        Holos[Index,table][3,angle] = LAng 
+        Holos[Index,table][4,vector] = Scale 
+        Holos[Index,table][5,vector] = Color 
+        Holos[Index,table][6,string] = Material 
+        Holos[Index,table][7,number] = Alpha      
+    }
+    
+    function void createHolo(Ind:number){
+        local Cur = Holos[Ind,table]
+        Ind+=StartIndex
+        holoCreate(Ind)
+        holoCreate(Ind)
+        holoCreate(Ind)
+        holoCreate(Ind)
+        holoPos(Ind,entity():toWorld(Cur[1,vector]*Scale))
+        holoParent(Ind,GeneralParent)
+        holoModel(Ind,Cur[2,string])
+        holoAng(Ind,entity():toWorld(Cur[3,angle]))
+        holoScaleUnits(Ind,Cur[4,vector]*Scale)
+        holoColor(Ind,Cur[5,vector])
+        holoMaterial(Ind,Cur[6,string])
+        holoAlpha(Ind,Cur[7,number])        
+    }
+    
+"
+    CodeIndex=0
+    timer("formatcode",30)
+    }
+    
+    function void number:mirrorHolo(Direction:string){
+        if (holoCanCreate()){
+            local IsDir = 0
+            local Dir = vec()
+            MirrorIndex = CurIndex
+
+            if (Direction=="forward"){
+                Dir = entity():forward()
+                colorPrint("TOOL","Hologram #",CurHolo:toString()," mirrored across plane forward") 
+                IsDir=1
+            }
+            if (Direction=="right"){ 
+                Dir = entity():right()
+                colorPrint("TOOL","Hologram #",CurHolo:toString()," mirrored across plane sideways")
+                IsDir=1
+            }
+            if (Direction=="up"){
+                Dir = entity():up()
+                colorPrint("TOOL","Hologram #",CurHolo:toString()," mirrored across plane upwards")
+                IsDir=1
+            }
+            if (IsDir){     
+                local DirNorm = Dir:normalized()
+                Dir = Dir - 2 * DirNorm * (Dir:dot(DirNorm)) 
+                local Ang = holoEntity(CurHolo):angles()
+                local Pos = holoEntity(CurHolo):pos()
+                local V = holoEntity(CurHolo):toWorld(holoEntity(CurHolo):massCenter())
+                
+                Ang = holoEntity(CurHolo):toWorld(ang(180,0,0))
+                Ang = Ang:rotateAroundAxis(DirNorm, 180)
+                
+                createHolo(HoloModel[MirrorIndex,string])
+                
+                if (V == Pos){
+                    CurIndex:angleHolo(Ang,0,1)    
+                }
+                else{
+                    local LocalV = holoEntity(CurHolo):toLocal(V)
+                    CurIndex:angleHolo(Ang,0,1)
+                    Pos = Pos + (V - holoEntity(CurHolo):toWorld(LocalV))    
+                }
+                
+                local Length = DirNorm:dot(entity():pos() - V)
+                local Vec = DirNorm * Length * 2
+                CurIndex:moveHolo(Pos + Vec)                              
+
+                CurIndex:colorHolo(HoloColor[MirrorIndex,vector])
+                CurIndex:materializeHolo(HoloMaterial[MirrorIndex,string])
+                CurIndex:scaleHolo(HoloScale[MirrorIndex,vector],1,0)
+                CurIndex:alphaHolo(HoloAlpha[MirrorIndex,number])
+                holoColor(CurHolo,vec(255,0,191))
+            }
+        }
+        else{colorPrint("TOOL","Either hit maximum hologram limit or burst limit","","")}            
+    }
+    
+    function void number:dupeHolo(){
+        if (holoCanCreate()){
+            MirrorIndex = CurIndex 
+            local LPos = entity():toLocal(holoEntity(Holos[MirrorIndex,number]):pos())  
+            createHolo(HoloModel[MirrorIndex,string])
+            CurIndex:moveHolo(entity():toWorld(LPos))            
+            CurIndex:colorHolo(HoloColor[MirrorIndex,vector])
+            CurIndex:materializeHolo(HoloMaterial[MirrorIndex,string])
+            CurIndex:scaleHolo(HoloScale[MirrorIndex,vector],1,0)
+            CurIndex:angleHolo(HoloAng[MirrorIndex,angle],0,1)
+            CurIndex:alphaHolo(HoloAlpha[MirrorIndex,number])     
+            holoColor(CurHolo,vec(255,0,191))
+        }
+        else{colorPrint("TOOL","Either hit maximum hologram limit or burst limit","","")}     
+    }
+
+    #ifdef rayOBBoxIntersection(vector,vector,vector,vector,angle)    
+    function vector holoIntersect(Index:number){
+        local TargetBox = holoEntity(Index)
+        if (TargetBox:isValid()){
+            local Mult = holoScale(holoIndex(TargetBox))       
+            local BoxSize = TargetBox:boxSize()*Mult
+            local Hit = rayOBBoxIntersection(ShootPos,Eye,TargetBox:pos(),BoxSize,TargetBox:angles())
+            return Hit    
+        }
+        else{
+            return vec(0) 
+        }      
+    }
+    
+    function number findEdgePoint(HitPos:number,EdgeLength:number){
+        local Value = 0
+        local H = EdgeLength / 2 #Half of edge length
+        local Q = EdgeLength / 4 #Quarter of edge length       
+        
+        if (HitPos > 0){
+            if (HitPos > Q){
+                Value = H    
+            }             
+        }
+        else{
+            if (HitPos < -Q){
+                Value = -H    
+            }                
+        }
+        
+        return Value       
+    }
+      
+    function void number:setPAPoint(Marker:number){
+        local Intersect = holoIntersect(holoID(This))
+        
+        if (Intersect != vec(0)){
+            local LVec = holoEntity(holoID(This)):toLocal(Intersect)   
+            local Scale = HoloScale[This,vector]
+                        
+            local EdgePosL = vec(findEdgePoint(LVec:x(),Scale:x()),findEdgePoint(LVec:y(),Scale:y()),findEdgePoint(LVec:z(),Scale:z())) 
+    
+                           
+        			 local NewPosL = vec(0)
+            local Edge_Dist = EdgePosL - LVec
+            local Centre_Dist = vec(0) - LVec
+            
+            #NewPosL is already equal to CentrePosL, so only need to set cases where EdgePosL is smaller
+            if (abs(Edge_Dist:x()) < abs( Centre_Dist:x())){
+                NewPosL[1] = EdgePosL:x()
+            }
+            
+            if (abs(Edge_Dist:y()) < abs( Centre_Dist:y())){
+                NewPosL[2] = EdgePosL:y()
+            }
+            
+            if (abs(Edge_Dist:z()) < abs( Centre_Dist:z())){
+                NewPosL[3] = EdgePosL:z()
+            }        
+            
+            if (Marker == 1){
+                holoCreate(-1) #CURRENT PA MARKER
+                holoModel(-1,"sphere")
+                holoScaleUnits(-1,vec(2,2,2))
+                holoColor(-1,vec(0,255,0))                
+                holoPos(-1,holoEntity(holoID(This)):toWorld(NewPosL)) 
+                holoParent(-1,holoEntity(holoID(This)))
+                PACur = This
+                PA1Set = 1
+            }
+            else{
+                holoCreate(-2) #TARGET PA MARKER
+                holoModel(-2,"sphere")
+                holoScaleUnits(-2,vec(2,2,2))
+                holoColor(-2,vec(0,0,255))                
+                holoPos(-2,holoEntity(holoID(This)):toWorld(NewPosL)) 
+                holoParent(-2,holoEntity(holoID(This))) 
+                PA2Set = 1               
+            }
+        }			     
+    }
+    #endif                                                                            
+}
