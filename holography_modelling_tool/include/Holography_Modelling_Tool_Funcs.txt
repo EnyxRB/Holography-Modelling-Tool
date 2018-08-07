@@ -73,6 +73,7 @@
 #--------------------------------VERSION 1.6--------------------------------#
 #(new) Added PA style point to point movement for holos.
 #(change) Moved the main functions to an external file.
+#(fix) Fixed some point to point movement bugs.
 #---------------------------------------------------------------------------#
 
 if (first()){
