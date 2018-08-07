@@ -3,7 +3,7 @@
 
 if (first()){
 
-    Version = "Beta 1.5"
+    Version = "Beta 1.6"
 
     function void colorPrint(Sector:string,Info:string,Value:string,Conclusion:string){
         printColor(vec(0,255,0),"[HMT "+Sector+"]",vec(0,175,0),"["+Version+"] ",vec(255),Info+" ",vec(0,161,255),Value,vec(255)," "+Conclusion)            
