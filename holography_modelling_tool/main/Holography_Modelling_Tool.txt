@@ -202,9 +202,11 @@ if (keyClk(owner())){
     elseif (owner():keyPressed("capslock")){
         #ifdef rayOBBoxIntersection(vector,vector,vector,vector,angle)
             if (PA1Set && PA2Set){
-                local Diff = holoEntity(-2):pos()-holoEntity(-1):pos()
-                local L = holoEntity(holoID(PACur)):toWorld(Diff)
-                PACur:moveHolo(L)  
+                if (holoEntity(-1):isValid() && holoEntity(-2):isValid()){
+                    local Diff = holoEntity(-2):pos()-holoEntity(-1):pos()
+                    local Pos = holoEntity(holoID(PACur)):pos()+(Diff)
+                    PACur:moveHolo(Pos) 
+                }
             }           
         #else
             colorPrint("BUG","Function:","rayOBBoxIntersection","is not enabled on your server")          
