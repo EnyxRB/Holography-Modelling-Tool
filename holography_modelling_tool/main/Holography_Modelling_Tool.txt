@@ -66,6 +66,9 @@
 #   numpad- = move holo up/roll holo left
 #   numpad+ = move holo down/roll holo right
 #   shift   = searches for and selects the hologram you are currently looking at
+#   e       = places PA point 1 on the currently selected hologram
+#   r       = places PA point 2 on the currently selected hologram
+#   capslock= moves holo with PA point 1 attached to position of PA point 2
 #   numpad/ = cycles to the previous hologram in the program
 #   numpad* = cycles to the next hologram in the program
 #--------------------------------------------------------------------------#
